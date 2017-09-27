@@ -10,14 +10,12 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 public class GameScheduler implements IScheduler {
-    private static final Logger LOG = LoggerFactory.getLogger(EvenScheduler.class);
-
+    private static final Logger LOG = LoggerFactory.getLogger(GameScheduler.class);
 
     //The parameter W1 and W2 denote the weight of the stream` response time and the stream recovery time, respectively;
     // public static double W1, W2;
     public static double W1 = 0.7, W2 = 0.3;
     //The parameter q denotes the computation cost for executors to process a single tuple.
-
 
     //The parameter lambda denotes the data processing time for slots to process a single computation cost.
 //    public static Map<WorkerSlot, Double> lambda;
@@ -199,13 +197,12 @@ public class GameScheduler implements IScheduler {
     }
 */
     public static Map<ExecutorDetails, WorkerSlot> gameScheduling(TopologyDetails topology, Cluster cluster, List<ExecutorDetails> executors, List<WorkerSlot> slots) {
+        LOG.info("gameScheduling................................");
         //Initialize the network topology.
         Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
 
-
        // for(Map.Entry<> s : networkTopography.entrySet())
-        //        System.out.println("networkTopology  "+ s);
-
+        //        LOG.info("networkTopology  "+ s);
 
         Map<String, String> nodeToRack = new HashMap<String, String>();
         for (Map.Entry<String, List<String>> entry : networkTopography.entrySet()) {
@@ -216,8 +213,7 @@ public class GameScheduler implements IScheduler {
                 nodeToRack.put(supervisorsByHost.get(0).getId(), rack);
             }
         }
-
-
+        LOG.info("nodeToRank: "+nodeToRack);
 
         //The parameter q denotes the computation cost for executors to process a single tuple.
         Map<ExecutorDetails, Double> q = initializeQ(executors);
@@ -264,7 +260,7 @@ public class GameScheduler implements IScheduler {
                 Component currentComponent = topology.getComponents().get(currentComponentId);
                 if(currentComponent!=null){
                     List<ExecutorDetails> upstreamExecutors = new ArrayList<>();
-                    System.out.println(currentComponent);
+                    LOG.info("currentComponent: "+String.valueOf(currentComponent));
                     for (String parentId : currentComponent.parents) {
                         List<ExecutorDetails> parentExecutors = topology.getComponents().get(parentId).execs;
                         upstreamExecutors.addAll(parentExecutors);
@@ -289,14 +285,14 @@ public class GameScheduler implements IScheduler {
                             if (nodeToRack.get(assignment.get(upExecutor).getNodeId()).equals(nodeToRack.get(assignment.get(executor).getNodeId()))) {
                                 double recoveryCost = costExecutorToSlot.get(slot) + gamma.get(upExecutor).get(executor) * w.get(upExecutor).get(executor) / 2;
                                 costExecutorToSlot.put(slot, recoveryCost);
-                            }
+                        }
                         }
                         for (ExecutorDetails downExecutor : downstreamExecutors) {
                             //                                                        beta.get(upExecutor).get(downExecutor) * d.get(upSlot).get(downSlot) / 2
                             double transferringCost = costExecutorToSlot.get(slot) + beta.get(executor).get(downExecutor) * d.get(slot).get(assignment.get(downExecutor)) / 2;
                             costExecutorToSlot.put(slot, transferringCost);
-                            System.out.println("nodeToRack size : " + nodeToRack.size() + "     assignment size : " + assignment.size());
-                            System.out.println(nodeToRack.get(assignment.get(executor).getNodeId()).equals(nodeToRack.get(assignment.get(downExecutor).getNodeId())));
+                            LOG.info("nodeToRack size : " + nodeToRack.size() + "     assignment size : " + assignment.size());
+                            LOG.info(String.valueOf(nodeToRack.get(assignment.get(executor).getNodeId()).equals(nodeToRack.get(assignment.get(downExecutor).getNodeId()))));
 
                             if (nodeToRack.get(assignment.get(executor).getNodeId()).equals(nodeToRack.get(assignment.get(downExecutor).getNodeId()))) {
                                 double recoveryCost = costExecutorToSlot.get(slot) + gamma.get(executor).get(downExecutor) * w.get(executor).get(downExecutor) / 2;
@@ -336,6 +332,8 @@ public class GameScheduler implements IScheduler {
     }
 
     private static Map<ExecutorDetails, WorkerSlot> scheduleTopologyWithGame(TopologyDetails topology, Cluster cluster) {
+        LOG.info("start scheduleTopologyWithGame................................");
+
         List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
         Set<ExecutorDetails> allExecutors = (Set<ExecutorDetails>) topology.getExecutors();
         Map<WorkerSlot, List<ExecutorDetails>> aliveAssigned = getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());
@@ -345,6 +343,8 @@ public class GameScheduler implements IScheduler {
             LOG.error("No available slots for topology: {}", topology.getName());
             return new HashMap<ExecutorDetails, WorkerSlot>();
         }
+
+        LOG.info("scheduleTopologyWithGame：{}"+ topology.getName());
 
         //allow requesting slots number bigger than available slots
         int toIndex = (totalSlotsToUse - aliveAssigned.size())
@@ -364,8 +364,10 @@ public class GameScheduler implements IScheduler {
 
         List<ExecutorDetails> executors = new ArrayList<ExecutorDetails>(reassignExecutors);
 
-        System.out.println("slots size:"+ reassignSlots.size());
+        LOG.info("reassignSlots size:"+ reassignSlots.size()+" reassignExecutors size:"+executors.size());
         reassignment = gameScheduling(topology, cluster, executors, reassignSlots);
+
+        LOG.info("reassignment:"+ reassignment+"\n");
 
         if (reassignment.size() != 0) {
             LOG.info("Available slots: {}", availableSlots.toString());
@@ -375,7 +377,6 @@ public class GameScheduler implements IScheduler {
 
     public static void scheduleTopologiesWithGame(Topologies topologies, Cluster cluster) {
 
-        LOG.info("start GameScheduler................................\n");
         for (TopologyDetails topology : cluster.needsSchedulingTopologies(topologies)) {
             String topologyId = topology.getId();
             Map<ExecutorDetails, WorkerSlot> newAssignment = scheduleTopologyWithGame(topology, cluster);

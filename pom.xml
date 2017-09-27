@@ -7,7 +7,7 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>ares</name>
+  <name>aresStorm</name>
   <url>http://maven.apache.org</url>
 
   <properties>
@@ -31,11 +31,45 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.storm</groupId>
+      <artifactId>storm-kafka</artifactId>
+      <version>1.0.2</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
+
+      <dependency>
+          <groupId>org.apache.curator</groupId>
+          <artifactId>curator-recipes</artifactId>
+          <version>2.8.0</version>
+      </dependency>
+
+      <dependency>
+          <groupId>mysql</groupId>
+          <artifactId>mysql-connector-java</artifactId>
+          <version>5.1.34</version>
+      </dependency>
+
+      <dependency>
+          <groupId>org.apache.kafka</groupId>
+          <artifactId>kafka_2.10</artifactId>
+          <version>0.8.2.2</version>
+          <exclusions>
+              <exclusion>
+                  <groupId>org.apache.kafka</groupId>
+                  <artifactId>kafka-clients</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.apache.zookeeper</groupId>
+                  <artifactId>zookeeper</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.google.collections/google-collections -->
     <dependency>
