@@ -22,7 +22,6 @@ public class KafkaWordCountTopology {
     public static final String KAFKA_SPOUT_ID ="kafka-spout";
     public static final String COUNT_BOLT_ID = "count-bolt";
     public static final String REPORT_BOLT_IT= "report-bolt";
-    public static final String SPOUT_REPORT_BOLT_ID= "spout-report-bolt";
     public static final String WORDCOUNT_REPORT_BOLT_ID= "wordcount-report-bolt";
     public static final String TOPOLOGY_NAME= "kafka-wordcount-topology";
     public static final String WORDCOUNT_STREAM_ID="wordcountstream";
@@ -60,6 +59,8 @@ public class KafkaWordCountTopology {
                 //.shuffleGrouping(KAFKA_SPOUT_ID);
         builder.setBolt(WORDCOUNT_REPORT_BOLT_ID,wordCountReportBolt)
                 .allGrouping(COUNT_BOLT_ID,TUPLECOUNT_STREAM_ID);
+        builder.setBolt(REPORT_BOLT_IT, new ReportBolt())
+                .shuffleGrouping(COUNT_BOLT_ID,WORDCOUNT_STREAM_ID);
 
         Config config = new Config();
         config.setNumWorkers(numworkers);
