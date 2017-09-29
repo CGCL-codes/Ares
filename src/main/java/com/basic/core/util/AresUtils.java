@@ -50,48 +50,37 @@ public class AresUtils {
 
     //The parameter lambda denotes the data processing time for slots to process a single computation cost.
     public static Map<WorkerSlot, Double> initializeLambda(List<WorkerSlot> slots , Cluster cluster) {
+        PropertiesUtil.init("nodecomputecost.properties");
         Map<WorkerSlot, Double> lambda = new HashMap<WorkerSlot, Double>();
         //cluster.getHost()
         for (WorkerSlot slot : slots) {
-            String nodeId = slot.getNodeId();
+            lambda.put(slot,Double.valueOf(PropertiesUtil.getProperties(cluster.getHost(slot.getNodeId()))));
         }
         return lambda;
     }
 
     //The parameter d denotes the data transferring time of node pairs.
     public static  Map<WorkerSlot, Map<WorkerSlot, Double>> initializeD(List<WorkerSlot> slots,Cluster cluster) {
+        PropertiesUtil.init("nodetransferpair.properties");
         Map<WorkerSlot, Map<WorkerSlot, Double>> d = new HashMap<WorkerSlot, Map<WorkerSlot, Double>>();
         //   Map<WorkerSlot, Double> temp = new HashMap<WorkerSlot, Double>();
         for (int i = 0; i < slots.size(); i++) {
-            for (int j = i; j < slots.size(); j++) {
-//                Random random = new Random();
-//                double cost = i == j ? 0.0 : random.nextDouble();
-//                //   temp.put(slots.get(j),cost);
-//                //  d.put(slots.get(i), temp);
-//                // WorkerSlot slot = slots.get(j);
-//                //   temp.put(slots.get(j),0.0);
-//                //  d.put(slots.get(i),temp);
-//                //  d.get(slots.get(j)).put(slots.get(i), cost);
-//
-//                if (d.containsKey(slots.get(i))) {
-//                    d.get(slots.get(i)).put(slots.get(j), cost);
-//                } else {
-//                    Map<WorkerSlot, Double> temp = new HashMap<WorkerSlot, Double>();
-//                    temp.put(slots.get(j), cost);
-//                    d.put(slots.get(i), temp);
-//                }
-//                if (d.containsKey(slots.get(j))) {
-//                    d.get(slots.get(j)).put(slots.get(i), cost);
-//                } else {
-//                    Map<WorkerSlot, Double> temp = new HashMap<WorkerSlot, Double>();
-//                    temp.put(slots.get(i), cost);
-//                    d.put(slots.get(j), temp);
-//                }
+            for (int j = 0; j < slots.size(); j++) {
+                WorkerSlot slot1 = slots.get(i);
+                WorkerSlot slot2 = slots.get(j);
+                Double transferTime= Double.valueOf(PropertiesUtil.getProperties(cluster.getHost(slot1.getNodeId())+","+cluster.getHost(slot2.getNodeId())));
+                Map<WorkerSlot, Double> temp=new HashMap<>();
+                if(d.containsKey(slot1))
+                    temp=d.get(slot1);
+                temp.put(slot2,transferTime);
+                d.put(slot1,temp);
+
             }
         }
         return d;
     }
 
+    //The parameter w denotes the recover time of upstream and downstream executor pairs.
     public static Map<ExecutorDetails, Map<ExecutorDetails, Double>>  initializeW(List<ExecutorDetails> executors) {
         Map<ExecutorDetails, Map<ExecutorDetails, Double>> w = new HashMap<ExecutorDetails, Map<ExecutorDetails, Double>>();
         w.clear();
