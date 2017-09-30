@@ -69,7 +69,7 @@ public class GameScheduler implements IScheduler {
         q = AresUtils.initializeQ(executors,topology);
         lambda = AresUtils.initializeLambda(slots,cluster);
         d = AresUtils.initializeD(slots,cluster);
-        w = AresUtils.initializeW(executors);
+        w = AresUtils.initializeW(topology,executors);
         alpha = AresUtils.initializeAlpha(topology, executors);
         beta = AresUtils.initializeBeta(topology, executors);
         gamma = AresUtils.W2/networkTopography.size();
@@ -94,7 +94,8 @@ public class GameScheduler implements IScheduler {
                 String currentComponentId = topology.getExecutorToComponent().get(executor);
                 Component currentComponent = topology.getComponents().get(currentComponentId);
                 if(currentComponent!=null){
-                    //过滤掉__acker的Executor线程
+                    //过滤掉__acker的ExecutorDetails
+
                     List<ExecutorDetails> upstreamExecutors = new ArrayList<>();
                     LOG.info("currentComponent: "+String.valueOf(currentComponent));
                     for (String parentId : currentComponent.parents) {

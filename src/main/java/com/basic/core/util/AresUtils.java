@@ -13,6 +13,7 @@ import java.util.*;
 /**
  * locate com.basic.util
  * Created by 79875 on 2017/9/25.
+ * Ares 工具包
  */
 public class AresUtils {
     //The parameter W1 and W2 denote the weight of the stream` response time and the stream recovery time, respectively;
@@ -80,29 +81,77 @@ public class AresUtils {
         return d;
     }
 
-    //The parameter w denotes the recover time of upstream and downstream executor pairs.
-    public static Map<ExecutorDetails, Map<ExecutorDetails, Double>>  initializeW(List<ExecutorDetails> executors) {
-        Map<ExecutorDetails, Map<ExecutorDetails, Double>> w = new HashMap<ExecutorDetails, Map<ExecutorDetails, Double>>();
-        w.clear();
-        for (int i = 0; i < executors.size(); i++) {
-            for (int j = i; j < executors.size(); j++) {
-                Random random = new Random();
-                double cost = i == j ? 0.0 : random.nextDouble();
-                if (w.containsKey(executors.get(i))) {
-                    w.get(executors.get(i)).put(executors.get(j), cost);
-                } else {
-                    Map<ExecutorDetails, Double> temp = new HashMap<ExecutorDetails, Double>();
-                    temp.put(executors.get(j), cost);
-                    w.put(executors.get(i), temp);
-                }
-                if (w.containsKey(executors.get(j))) {
-                    w.get(executors.get(j)).put(executors.get(i), cost);
-                } else {
-                    Map<ExecutorDetails, Double> temp = new HashMap<ExecutorDetails, Double>();
-                    temp.put(executors.get(i), cost);
-                    w.put(executors.get(j), temp);
-                }
+    /**
+     * 递归调用构造RevocerTime 模型参数
+     * @param topology
+     * @param component
+     * @param w
+     * @param layer
+     */
+    public static void initializeWRecursiveConstruction(TopologyDetails topology, Component component, Map<ExecutorDetails, Map<ExecutorDetails, Double>> w, int layer){
+        layer++;//层数+1
+        List<String> parentsId = component.parents;
+
+        //过滤掉根节点 spout
+        if(parentsId.size()!=0) {
+            double upComponetExces = 0.0;
+            for (String parentId : parentsId) {
+                Component parent = topology.getComponents().get(parentId);
+                upComponetExces += parent.execs.size();
             }
+            //以componet为目标节点插入所有权值
+            insertWModel(topology, component, upComponetExces * layer, w);
+        }
+
+        List<String> childsId = component.children;
+        if (childsId.size() == 0) {
+            return;
+        }
+
+        //递归调用遍历整个topology结构图
+        for(String childId :childsId){
+            Component child = topology.getComponents().get(childId);
+            initializeWRecursiveConstruction(topology,child,w,layer);
+        }
+
+    }
+
+    /**
+     * 插入到w RecoverTime恢复模型
+     * @param topology
+     * @param component
+     * @param cost
+     * @param w
+     */
+    public static void insertWModel(TopologyDetails topology,Component component, Double cost,Map<ExecutorDetails, Map<ExecutorDetails, Double>> w){
+        List<String> parentsId = component.parents;
+        for(String parentId :parentsId){
+            Component parent = topology.getComponents().get(parentId);
+            for(ExecutorDetails parentexecutor :parent.execs)
+                for(ExecutorDetails childexecutor :component.execs){
+                    Map<ExecutorDetails, Double> temp;
+                    if(w.containsKey(parentexecutor))
+                        temp=w.get(parentexecutor);
+                    else
+                        temp=new HashMap<>();
+                    temp.put(childexecutor,cost);
+
+                    w.put(parentexecutor,temp);
+                }
+        }
+
+    }
+
+
+    //The parameter w denotes the recover time of upstream and downstream executor pairs.
+    public static Map<ExecutorDetails, Map<ExecutorDetails, Double>>  initializeW(TopologyDetails topology, List<ExecutorDetails> executors) {
+        Map<ExecutorDetails, Map<ExecutorDetails, Double>> w = new HashMap<ExecutorDetails, Map<ExecutorDetails, Double>>();
+
+        Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
+        for(String spoutId:spouts.keySet()){
+            Component spout = topology.getComponents().get(spoutId);
+            int layer=0;
+            initializeWRecursiveConstruction(topology,spout,w,layer);
         }
         return w;
     }
