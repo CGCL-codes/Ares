@@ -1,5 +1,6 @@
 package com.basic.util;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -14,6 +15,21 @@ public class PropertiesUtil {
         pro = new Properties();
         try {
             InputStream in = Object.class.getResourceAsStream(fileName);
+            pro.load(in);
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 绝对路径初始化
+     * @param absolutePath
+     */
+    public static void initAbsolutePath(String absolutePath) {
+        pro = new Properties();
+        try {
+            InputStream in = new FileInputStream(absolutePath);
             pro.load(in);
             in.close();
         } catch (Exception e) {

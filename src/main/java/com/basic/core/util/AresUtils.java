@@ -7,6 +7,8 @@ import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -16,6 +18,7 @@ import java.util.*;
  * Ares 工具包
  */
 public class AresUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(AresUtils.class);
     //The parameter W1 and W2 denote the weight of the stream` response time and the stream recovery time, respectively;
     // public static double W1, W2;
     public static double W1 = 0.7, W2 = 0.3;
@@ -39,19 +42,23 @@ public class AresUtils {
     }
 
     //The parameter q denotes the computation cost for executors to process a single tuple.
-    public static Map<ExecutorDetails, Double> initializeQ(List<ExecutorDetails> executors, TopologyDetails topology) {
-        PropertiesUtil.init("componentcost.properties");
+    public static Map<ExecutorDetails, Double> initializeQ(TopologyDetails topology, List<ExecutorDetails> executors) {
+        PropertiesUtil.init("/componentcost.properties");
         Map<ExecutorDetails, Double> q = new HashMap<ExecutorDetails, Double>();
         for(ExecutorDetails executor :executors){
             String currentComponentId = topology.getExecutorToComponent().get(executor);
-            q.put(executor, Double.valueOf(PropertiesUtil.getProperties(currentComponentId)));
+            if(topology.getComponents().get(currentComponentId)!=null){
+                LOG.info(PropertiesUtil.getProperties(currentComponentId));
+                q.put(executor, Double.valueOf(PropertiesUtil.getProperties(currentComponentId)));
+            }
         }
         return q;
     }
 
     //The parameter lambda denotes the data processing time for slots to process a single computation cost.
     public static Map<WorkerSlot, Double> initializeLambda(List<WorkerSlot> slots , Cluster cluster) {
-        PropertiesUtil.init("nodecomputecost.properties");
+        //*Double.valueOf(PropertiesUtil.getProperties(componentId))
+        PropertiesUtil.init("/nodecomputecost.properties");
         Map<WorkerSlot, Double> lambda = new HashMap<WorkerSlot, Double>();
         //cluster.getHost()
         for (WorkerSlot slot : slots) {
@@ -61,15 +68,16 @@ public class AresUtils {
     }
 
     //The parameter d denotes the data transferring time of node pairs.
-    public static  Map<WorkerSlot, Map<WorkerSlot, Double>> initializeD(List<WorkerSlot> slots,Cluster cluster) {
-        PropertiesUtil.init("nodetransferpair.properties");
+    public static  Map<WorkerSlot, Map<WorkerSlot, Double>> initializeD(List<WorkerSlot> slots, Cluster cluster) {
+        PropertiesUtil.init("/nodetransferpair.properties");
         Map<WorkerSlot, Map<WorkerSlot, Double>> d = new HashMap<WorkerSlot, Map<WorkerSlot, Double>>();
         //   Map<WorkerSlot, Double> temp = new HashMap<WorkerSlot, Double>();
         for (int i = 0; i < slots.size(); i++) {
             for (int j = 0; j < slots.size(); j++) {
                 WorkerSlot slot1 = slots.get(i);
                 WorkerSlot slot2 = slots.get(j);
-                Double transferTime= Double.valueOf(PropertiesUtil.getProperties(cluster.getHost(slot1.getNodeId())+","+cluster.getHost(slot2.getNodeId())));
+                String nodeTransferPair=cluster.getHost(slot1.getNodeId())+","+cluster.getHost(slot2.getNodeId());
+                Double transferTime= Double.valueOf(PropertiesUtil.getProperties(nodeTransferPair));
                 Map<WorkerSlot, Double> temp=new HashMap<>();
                 if(d.containsKey(slot1))
                     temp=d.get(slot1);
@@ -123,7 +131,7 @@ public class AresUtils {
      * @param cost
      * @param w
      */
-    public static void insertWModel(TopologyDetails topology,Component component, Double cost,Map<ExecutorDetails, Map<ExecutorDetails, Double>> w){
+    public static void insertWModel(TopologyDetails topology, Component component, Double cost, Map<ExecutorDetails, Map<ExecutorDetails, Double>> w){
         List<String> parentsId = component.parents;
         for(String parentId :parentsId){
             Component parent = topology.getComponents().get(parentId);
@@ -144,7 +152,7 @@ public class AresUtils {
 
 
     //The parameter w denotes the recover time of upstream and downstream executor pairs.
-    public static Map<ExecutorDetails, Map<ExecutorDetails, Double>>  initializeW(TopologyDetails topology, List<ExecutorDetails> executors) {
+    public static Map<ExecutorDetails, Map<ExecutorDetails, Double>>  initializeW(TopologyDetails topology) {
         Map<ExecutorDetails, Map<ExecutorDetails, Double>> w = new HashMap<ExecutorDetails, Map<ExecutorDetails, Double>>();
 
         Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
@@ -162,8 +170,8 @@ public class AresUtils {
      * @param component
      * @return
      */
-    public static int getChildsPathsNumber(TopologyDetails topology,Component component){
-        int temp=0;
+    public static double getChildsPathsNumber(TopologyDetails topology, Component component){
+        double temp=0.0;
         List<String> childrensId = component.children;
         if(childrensId.size()==0)
             return component.execs.size();
@@ -180,8 +188,8 @@ public class AresUtils {
      * @param component
      * @return
      */
-    public static int getParentsPathsNumber(TopologyDetails topology,Component component){
-        int temp=0;
+    public static double getParentsPathsNumber(TopologyDetails topology, Component component){
+        double temp=0.0;
         List<String> parentsId = component.parents;
         if(parentsId.size()==0)
             return component.execs.size();
@@ -197,7 +205,7 @@ public class AresUtils {
         Map<ExecutorDetails, Double> alpha = new HashMap<>();
 
         //Calculate the total number of paths
-        int allPathLength=0;
+        double allPathLength=0.0;
 
         Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
         for(String spoutId:spouts.keySet()){
@@ -209,13 +217,13 @@ public class AresUtils {
             String componentId = topology.getExecutorToComponent().get(executor);
             Component component = topology.getComponents().get(componentId);
             if(component==null){
-                break;
+                continue;
             }
-            int childPathNumber=getChildsPathsNumber(topology,component);
-            int parentPathNumber=getParentsPathsNumber(topology,component);
-            int currentExecutorPathNumber=parentPathNumber*childPathNumber;
-            PropertiesUtil.init("componentcost.properties");
-            alpha.put(executor, Double.valueOf(currentExecutorPathNumber/allPathLength)*Double.valueOf(PropertiesUtil.getProperties(componentId)));
+            double childPathNumber=getChildsPathsNumber(topology,component);
+            double parentPathNumber=getParentsPathsNumber(topology,component);
+            double currentExecutorPathNumber=parentPathNumber*childPathNumber;
+
+            alpha.put(executor, (currentExecutorPathNumber/allPathLength));
         }
         return alpha;
     }
@@ -223,7 +231,7 @@ public class AresUtils {
     public static Map<ExecutorDetails, Map<ExecutorDetails, Double>> initializeBeta(TopologyDetails topology, List<ExecutorDetails> executors) {
         Map<ExecutorDetails, Map<ExecutorDetails, Double>> beta = new HashMap<>();
         //Calculate the total number of paths
-        int allPathLength=0;
+        double allPathLength=0.0;
 
         Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
         for(String spoutId:spouts.keySet()){
@@ -235,20 +243,26 @@ public class AresUtils {
             String componentId = topology.getExecutorToComponent().get(executor);
             Component component = topology.getComponents().get(componentId);
             if (component == null || component.children.size()==0) {
-                break;
+                continue;
             }
             Iterator<String> childcomponentIdIterator = component.children.iterator();
             while (childcomponentIdIterator.hasNext()){
                 String childcomponentId = childcomponentIdIterator.next();
                 Component childcomponent = topology.getComponents().get(childcomponentId);
                 for(ExecutorDetails childexecutor:childcomponent.execs){
-                    int parentPathNumber=getParentsPathsNumber(topology,component);
-                    int childPathNumber=getChildsPathsNumber(topology,childcomponent);
-                    int currentPathNumber=parentPathNumber*childPathNumber;
+                    double parentPathNumber=1;
+                    if(component.parents.size()!=0){
+                        parentPathNumber=getParentsPathsNumber(topology,component);
+                    }
+
+                    double childPathNumber=getChildsPathsNumber(topology,childcomponent);
+                    LOG.info("parentPathNumber:"+parentPathNumber+" childPathNumber:"+childPathNumber);
+                    double currentPathNumber=parentPathNumber*childPathNumber;
                     Map<ExecutorDetails, Double> temp=new HashMap<>();
                     if(beta.containsKey(executor))
                         temp=beta.get(executor);
-                    temp.put(childexecutor,Double.valueOf(currentPathNumber/allPathLength));
+                    double cost=currentPathNumber/allPathLength;
+                    temp.put(childexecutor,cost);
                     beta.put(executor, temp);
                 }
             }

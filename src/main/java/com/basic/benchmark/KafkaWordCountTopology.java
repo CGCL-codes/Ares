@@ -64,7 +64,7 @@ public class KafkaWordCountTopology {
 
         Config config = new Config();
         config.setNumWorkers(numworkers);
-        config.setNumAckers(0);//每个Work进程会运行一个Acker任务，这里将Ack任务设置为0 禁止Ack任务
+        //config.setNumAckers(0);//每个Work进程会运行一个Acker任务，这里将Ack任务设置为0 禁止Ack任务
         if (args != null && args.length > 0) {
             // Nimbus host name passed from command line
             StormSubmitter.submitTopologyWithProgressBar(TOPOLOGY_NAME, config, builder.createTopology());
