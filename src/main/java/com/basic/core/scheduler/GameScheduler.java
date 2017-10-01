@@ -47,6 +47,27 @@ public class GameScheduler implements IScheduler {
             return gamma.get(upExecutor).get(downExecutor) * d.get(upExecutor).get(downExecutor) / 2;
         }
     */
+
+    private static boolean isComponentAcker(TopologyDetails topology, ExecutorDetails executor){
+        String currentComponentId = topology.getExecutorToComponent().get(executor);
+        return topology.getComponents().get(currentComponentId)==null;
+    }
+
+    /**
+     * computeDataProcessingCost
+     * @param topology
+     * @param executor
+     * @param workerSlot
+     * @return
+     */
+    private static double computeDataProcessingCost(TopologyDetails topology, ExecutorDetails executor,WorkerSlot workerSlot){
+        String currentComponentId = topology.getExecutorToComponent().get(executor);
+        PropertiesUtil.init("/componentcost.properties");
+        Double componentcost = Double.valueOf(PropertiesUtil.getProperties(currentComponentId));
+        Double nodecomputecost = lambda.get(workerSlot);
+        return componentcost*nodecomputecost;
+    }
+
     private static  Map<ExecutorDetails, WorkerSlot> gameScheduling(TopologyDetails topology, Cluster cluster, List<ExecutorDetails> executors, List<WorkerSlot> slots) {
         LOG.info("gameScheduling................................");
         //Initialize the network topology.
@@ -86,6 +107,31 @@ public class GameScheduler implements IScheduler {
             assignment.put(executor, slots.get(index));
         }
 
+        //Add up all tasks' procesing time for a single slot
+        Map<WorkerSlot, Double> totalProcessingCostOfExecutorsOnSlot = new HashMap<>();
+
+        //Number of tasks in a slot
+        Map<WorkerSlot, Integer> slotContainTaskNum=new HashMap<>();
+
+        HashMap<WorkerSlot, List<ExecutorDetails>> workerSlotListHashMap = AresUtils.reverseMap(assignment);
+
+        for(WorkerSlot slot: slots){
+            List<ExecutorDetails> executorDetails = workerSlotListHashMap.get(slot);
+            if(workerSlotListHashMap.containsKey(slot)){
+                slotContainTaskNum.put(slot,executorDetails.size());
+                Double cost=0.0;
+                for(ExecutorDetails executor:executorDetails){
+                    if(!isComponentAcker(topology,executor))
+                        cost+=computeDataProcessingCost(topology,executor,slot);
+                }
+                totalProcessingCostOfExecutorsOnSlot.put(slot,cost);
+            }else {
+                totalProcessingCostOfExecutorsOnSlot.put(slot,0.0);
+                slotContainTaskNum.put(slot,0);
+            }
+
+        }
+
         //The flag indicates whether achieves Nash equilibrium.
         boolean isNashEquilibrium;
 
@@ -96,11 +142,23 @@ public class GameScheduler implements IScheduler {
             //Make the best-response strategy for each executor by turn.
 
             for (ExecutorDetails executor : executors) {
-                //Initialize the list of upstream and downstream executors for current executor.
                 String currentComponentId = topology.getExecutorToComponent().get(executor);
                 Component currentComponent = topology.getComponents().get(currentComponentId);
                 if(currentComponent!=null){
                     //过滤掉__acker的ExecutorDetails
+
+                    ////////////////////////////////////////delete//////////////////////////////////////////////
+                    WorkerSlot workerSlot = assignment.get(executor);
+                    int temp = slotContainTaskNum.get(workerSlot);
+                    slotContainTaskNum.put(workerSlot,--temp);
+
+                    double cost = computeDataProcessingCost(topology, executor, workerSlot);
+                    Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(workerSlot);
+                    tempCost-=cost;
+                    totalProcessingCostOfExecutorsOnSlot.put(workerSlot,tempCost);
+                    ////////////////////////////////////////delete//////////////////////////////////////////////
+
+                    //Initialize the list of upstream and downstream executors for current executor.
 
                     List<ExecutorDetails> upstreamExecutors = new ArrayList<>();
                     LOG.info("currentComponent: "+String.valueOf(currentComponent));
@@ -116,51 +174,12 @@ public class GameScheduler implements IScheduler {
                     //Store the previous assignment of an executor for later check of Nash equilibrium.
                     WorkerSlot preAssignment = assignment.get(executor);
 
-                    LOG.info("beta："+beta);
                     //Initialize the costs of assigning an executor to different slots.
                     Map<WorkerSlot, Double> costExecutorToSlot = new HashMap<WorkerSlot, Double>();
                     for (WorkerSlot slot : slots) {
-//                        PropertiesUtil.init("/componentToNodecost.properties");
-//                        Double componentToNodecost = Double.valueOf(PropertiesUtil.getProperties(currentComponentId+","+cluster.getHost(slot.getNodeId())));
-//                        costExecutorToSlot.put(slot, alpha.get(executor) * componentToNodecost);
-                        String nodeId = slot.getNodeId();
 
-                        //////////////////////////////////////////getnodeToExecutorsnum////////////////////////////////////////////
-                        int nodeToExecutorsnum=0;
-                        List<WorkerSlot> nodeWorkSlotList=new ArrayList<>();
-                        for (WorkerSlot tempSlot : slots) {
-                            if(tempSlot.getNodeId().equals(nodeId)){
-                                if(getExecutorListBySlot(assignment,tempSlot)!=null)
-                                    nodeWorkSlotList.add(tempSlot);
-                            }
-                        }
-                        nodeToExecutorsnum=nodeWorkSlotList.size();
-                        /////////////////////////////////////////getnodeToExecutorsnum/////////////////////////////////////////////
-
-                        PropertiesUtil.init("/componentcost.properties");
-                        Double componentcost = Double.valueOf(PropertiesUtil.getProperties(currentComponentId));
-                        double cost=alpha.get(executor) * componentcost * lambda.get(slot);
-
-                        for(WorkerSlot NodeWorkerslot:nodeWorkSlotList){
-
-                            if(costExecutorToSlot.get(NodeWorkerslot)!=null)
-                                costExecutorToSlot.put(NodeWorkerslot,costExecutorToSlot.get(NodeWorkerslot)+cost);
-                            else {
-                                List<ExecutorDetails> executorListBySlot = getExecutorListBySlot(assignment, NodeWorkerslot);
-                                double NodeWorkerslotcost=0.0;
-                                for(ExecutorDetails tmp:executorListBySlot){
-                                    String temComponentId = topology.getExecutorToComponent().get(tmp);
-                                    Component temComponent = topology.getComponents().get(temComponentId);
-                                    if(temComponent!=null){
-                                        Double tmpcost = Double.valueOf(PropertiesUtil.getProperties(temComponentId));
-                                        NodeWorkerslotcost+=alpha.get(tmp) * tmpcost * lambda.get(NodeWorkerslot);
-                                    }
-                                }
-                                costExecutorToSlot.put(NodeWorkerslot,NodeWorkerslotcost+cost);
-                            }
-                        }
-
-                        costExecutorToSlot.put(slot,(nodeToExecutorsnum+1)*cost);
+                        double totalcost=totalProcessingCostOfExecutorsOnSlot.get(slot)+(slotContainTaskNum.get(slot)+1)*computeDataProcessingCost(topology,executor,slot);
+                        costExecutorToSlot.put(slot,totalcost*alpha.get(executor));
 
                         for (ExecutorDetails upExecutor : upstreamExecutors) {
 //                          LOG.info("upExecutor："+upExecutor+" downexecutor："+executor);
@@ -191,6 +210,17 @@ public class GameScheduler implements IScheduler {
                             assignment.put(executor, entry.getKey());
                         }
                     }
+
+                    ////////////////////////////////////////update//////////////////////////////////////////////
+                    workerSlot = assignment.get(executor);
+                    temp = slotContainTaskNum.get(workerSlot);
+                    slotContainTaskNum.put(workerSlot,++temp);
+
+                    cost = computeDataProcessingCost(topology, executor, workerSlot);
+                    tempCost = totalProcessingCostOfExecutorsOnSlot.get(workerSlot);
+                    tempCost+=cost;
+                    totalProcessingCostOfExecutorsOnSlot.put(workerSlot,tempCost);
+                    /////////////////////////////////////////update///////////////////////////////////////////
 
                     //Check whether achieves Nash equilibrium.
                     if (isNashEquilibrium && assignment.get(executor) != preAssignment) {
