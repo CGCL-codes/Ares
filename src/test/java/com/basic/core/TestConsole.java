@@ -16,4 +16,11 @@ public class TestConsole {
     public void Test2(){
         System.out.println("so you are a console?");
     }
+
+//    @Test
+//    public void Test3(){
+//        Map<String,Double> map=new HashMap<>();
+//        Double tanjie = map.get("tanjie");
+//        System.out.println(String.valueOf(tanjie*1.0/2));
+//    }
 }

@@ -11,7 +11,7 @@ import java.util.Map;
  * locate com.basic.core.util
  * Created by 79875 on 2017/9/30.
  */
-public class AresUtilsTest {
+public class InitparaUtilsTest {
     @Test
     public void initializeD() throws Exception {
         PropertiesUtil.init("/componentcost.properties");
