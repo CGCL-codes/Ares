@@ -16,7 +16,7 @@ import java.util.Arrays;
 
 /**
  * Created by 79875 on 2017/3/3.
- * storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.KafkaWordCountTopology tweetswordtopic3 stormkafka 12 18 10
+ * storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.KafkaWordCountTopology tweetswordtopic3 stormkafka 9 9 9
  */
 public class KafkaWordCountTopology {
     public static final String KAFKA_SPOUT_ID ="kafka-spout";

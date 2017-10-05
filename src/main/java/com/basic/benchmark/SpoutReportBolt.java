@@ -1,6 +1,5 @@
 package com.basic.benchmark;
 
-
 import com.basic.util.DataBaseUtil;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -12,18 +11,23 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by 79875 on 2017/3/7.
- * 用来统计WordCount吞吐量的Bolt
+ * 用来统计输出Spout输入源的吞吐量的Bolt
  */
-public class WordCountReportBolt extends BaseRichBolt {
-    private Logger logger= LoggerFactory.getLogger(WordCountReportBolt.class);
+public class SpoutReportBolt extends BaseRichBolt {
+    private static Logger logger= LoggerFactory.getLogger(SpoutReportBolt.class);
     private OutputCollector outputCollector;
+    private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>());
 
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.outputCollector=outputCollector;
-        logger.info("------------WordCountReportBolt prepare------------");
+        logger.info("------------SpoutReportBolt prepare------------");
     }
 
     public void execute(Tuple tuple) {
@@ -41,4 +45,3 @@ public class WordCountReportBolt extends BaseRichBolt {
 
     }
 }
-

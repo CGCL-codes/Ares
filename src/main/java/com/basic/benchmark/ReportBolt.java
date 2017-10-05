@@ -34,7 +34,8 @@ public class ReportBolt extends BaseRichBolt {
         //将最后结果插入到数据库中
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         //logger.info("word:"+word+" tupplecount:"+count +" timeinfo"+timestamp);
-        DataBaseUtil.insertWordCount(timestamp,word,count);
+        DataBaseUtil.insertAresWordCount(timestamp,word,count);
+        outputCollector.ack(tuple);
         //实际应用中，最后一个阶段，大部分应该是持久化到mysql，redis，es，solr或mongodb中
 }
 

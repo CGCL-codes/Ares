@@ -91,27 +91,6 @@ public class DataBaseUtil {
     /**
      * 插入数据到spouttupleCount表中
      * @param time
-     * @param tuplecount
-     */
-    public static void insertSpoutTupleCount(Timestamp time,Long tuplecount){
-        try {
-            PreparedStatement preparedStatement;
-            String sql = "INSERT INTO t_spouttuplecount(time,tuplecount)"
-                    + " VALUES (?,?)";  // 插入数据的sql语句
-            preparedStatement = conn.prepareStatement(sql);    // 创建用于执行静态sql语句的Statement对象
-            preparedStatement.setTimestamp(1,time);
-            preparedStatement.setLong(2,tuplecount);
-            int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
-            preparedStatement.close();
-            //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 插入数据到spouttupleCount表中
-     * @param time
      * @param bytecount
      */
     public static void insertHdfsByteCount(Timestamp time,Long bytecount){
@@ -157,10 +136,10 @@ public class DataBaseUtil {
      * @param word
      * @param count
      */
-    public static void insertWordCount(Timestamp time,String word,Long count){
+    public static void insertAresWordCount(Timestamp time,String word,Long count){
         try {
             PreparedStatement preparedStatement;
-            String sql = "INSERT INTO t_wordcount(time,word,count)"
+            String sql = "INSERT INTO t_areswordcount(time,word,count)"
                     + " VALUES (?,?,?)";  // 插入数据的sql语句
             preparedStatement = conn.prepareStatement(sql);    // 创建用于执行静态sql语句的Statement对象
             preparedStatement.setTimestamp(1,time);
@@ -191,6 +170,28 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_tuplecount (time,tuplecount) values"+time+" "+tuplecount);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 插入数据到spouttupleCount表中
+     * @param time
+     * @param tuplecount
+     */
+    public static void insertAresSpoutCount(Timestamp time,Long tuplecount,int taskid){
+        try {
+            PreparedStatement preparedStatement;
+            String sql = "INSERT INTO t_aresspoutcount(time,tuplecount,taskid)"
+                    + " VALUES (?,?,?)";  // 插入数据的sql语句
+            preparedStatement = conn.prepareStatement(sql);    // 创建用于执行静态sql语句的Statement对象
+            preparedStatement.setTimestamp(1,time);
+            preparedStatement.setLong(2,tuplecount);
+            preparedStatement.setInt(3,taskid);
+            int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
+            preparedStatement.close();
+            //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
         }catch (SQLException e){
             e.printStackTrace();
         }

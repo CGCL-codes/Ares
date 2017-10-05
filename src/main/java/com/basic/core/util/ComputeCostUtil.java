@@ -41,10 +41,10 @@ public class ComputeCostUtil {
     private ComputeCostUtil() {
     }
 
-    //The parameter q denotes the computation cost for executors to process a single tuple.
+    //The parameter q denotes the computation cost for components to process a single tuple.
     private Map<String, Double> q;
 
-    //The parameter lambda denotes the data processing time for slots to process a single computation cost.
+    //The parameter lambda denotes the data processing time for node to process a single computation cost.
     private Map<String, Double> lambda;
 
     //The parameter d denotes the data transferring time of node pairs.

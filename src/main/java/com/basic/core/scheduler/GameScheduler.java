@@ -43,7 +43,6 @@ public class GameScheduler implements IScheduler {
         return ret;
     }
 
-
     private static  Map<ExecutorDetails, WorkerSlot> gameScheduling(TopologyDetails topology, Cluster cluster, List<ExecutorDetails> allExecutors, List<ExecutorDetails> executors, List<WorkerSlot> slots) {
         LOG.info("gameScheduling................................");
         //Initialize the network topology.
@@ -121,7 +120,7 @@ public class GameScheduler implements IScheduler {
                     }
 
                     //Store the previous assignment of an executor for later check of Nash equilibrium.
-                    WorkerSlot preAssignment = assignment.get(executor);
+                    WorkerSlot preAssignmentWorkSlot = assignment.get(executor);
 
                     //Initialize the costs of assigning an executor to different slots.
                     Map<WorkerSlot, Double> costExecutorToSlot = new HashMap<WorkerSlot, Double>();
@@ -133,18 +132,18 @@ public class GameScheduler implements IScheduler {
                         for(ExecutorDetails upExecutor : upstreamExecutors) {
                             double transferringCost = computeCostUtil.computeTransferringCost(upExecutor,executor,assignment.get(upExecutor),slot);
                             costExecutorToSlot.put(slot,costExecutorToSlot.get(slot) + transferringCost);
-//                            if(nodeToRack.get(assignment.get(upExecutor).getNodeId()).equals(nodeToRack.get(assignment.get(executor).getNodeId()))) {
-//                                double recoveryCost=computeCostUtil.computeRecoveryCost(upExecutor,executor);
-//                                costExecutorToSlot.put(slot,costExecutorToSlot.get(slot)+ recoveryCost);
-//                            }
+                            if(nodeToRack.get(assignment.get(upExecutor).getNodeId()).equals(nodeToRack.get(preAssignmentWorkSlot.getNodeId()))) {
+                                double recoveryCost=computeCostUtil.computeRecoveryCost(upExecutor,executor);
+                                costExecutorToSlot.put(slot,costExecutorToSlot.get(slot)+ recoveryCost);
+                            }
                         }
                         for(ExecutorDetails downExecutor : downstreamExecutors) {
                             double transferringCost = computeCostUtil.computeTransferringCost(executor,downExecutor,slot,assignment.get(downExecutor));
                             costExecutorToSlot.put(slot,costExecutorToSlot.get(slot) + transferringCost);
-//                            if (nodeToRack.get(assignment.get(executor).getNodeId()).equals(nodeToRack.get(assignment.get(downExecutor).getNodeId()))) {
-//                                double recoveryCost=computeCostUtil.computeRecoveryCost(executor,downExecutor);
-//                                costExecutorToSlot.put(slot,costExecutorToSlot.get(slot)+ recoveryCost);
-//                            }
+                            if (nodeToRack.get(assignment.get(executor).getNodeId()).equals(nodeToRack.get(preAssignmentWorkSlot.getNodeId()))) {
+                                double recoveryCost=computeCostUtil.computeRecoveryCost(executor,downExecutor);
+                                costExecutorToSlot.put(slot,costExecutorToSlot.get(slot)+ recoveryCost);
+                            }
                         }
                     }
 
@@ -158,7 +157,7 @@ public class GameScheduler implements IScheduler {
                     }
 
                     WorkerSlot nowslot = assignment.get(executor);
-                    LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+"  prehost:"+cluster.getHost(preAssignment.getNodeId())+" perport:"+preAssignment.getPort()+" nowhost:"+cluster.getHost(nowslot.getNodeId())+" nowprot:"+nowslot.getPort());
+                    LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+"  prehost:"+cluster.getHost(preAssignmentWorkSlot.getNodeId())+" perport:"+preAssignmentWorkSlot.getPort()+" nowhost:"+cluster.getHost(nowslot.getNodeId())+" nowprot:"+nowslot.getPort());
 
                     ////////////////////////////////////////update//////////////////////////////////////////////
                     workerSlot = assignment.get(executor);
@@ -166,7 +165,7 @@ public class GameScheduler implements IScheduler {
                     /////////////////////////////////////////update///////////////////////////////////////////
 
                     //Check whether achieves Nash equilibrium.
-                    if (isNashEquilibrium && assignment.get(executor) != preAssignment) {
+                    if (isNashEquilibrium && assignment.get(executor) != preAssignmentWorkSlot) {
                         isNashEquilibrium = false;
                     }
                 }
@@ -215,13 +214,6 @@ public class GameScheduler implements IScheduler {
             LOG.info("workSlot host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort());
         }
 
-        if(allSlots.size() != availableSlots.size()){
-            return reassignment;
-        }
-
-        computeCostUtil=ComputeCostUtil.getInstance(topology,cluster);
-        computeCostUtil.initPara();
-
         Set<ExecutorDetails> allExecutors = (Set<ExecutorDetails>) topology.getExecutors();
         Map<WorkerSlot, List<ExecutorDetails>> aliveAssigned = getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());
         //int totalSlotsToUse = Math.min(topology.getNumWorkers(), availableSlots.size() + aliveAssigned.size());
@@ -247,6 +239,13 @@ public class GameScheduler implements IScheduler {
         List<ExecutorDetails> allexecutors = new ArrayList<ExecutorDetails>(allExecutors);
 
         LOG.info("reassignSlots size:"+ reassignSlots.size()+" reassignExecutors size:"+executors.size()+" allexecutors size: "+allexecutors.size());
+        if(executors.size() != allexecutors.size()){
+            return reassignment;
+        }
+
+        computeCostUtil=ComputeCostUtil.getInstance(topology,cluster);
+        computeCostUtil.initPara();
+
         reassignment = gameScheduling(topology, cluster,allexecutors, executors, reassignSlots);
 
         LOG.info("reassignment:"+ reassignment+"\n");

@@ -1,0 +1,104 @@
+package com.basic.benchmark;
+
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Created by dello on 2016/10/15.
+ */
+public class SentenceSpout extends BaseRichSpout {
+
+    private static Logger logger= LoggerFactory.getLogger(SentenceSpout.class);
+
+    public static final String WORDCOUNT_STREAM_ID="wordcountstream";
+    public static final String TUPLECOUNT_STREAM_ID="tuplecountstream";
+
+    private Timer timer;
+    private int thisTaskId =0;
+    private long spoutcount=0; //记录单位时间通过的元组数量
+
+    private SpoutOutputCollector outputCollector;
+    private int index=0;
+    private ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
+
+    private String[] sentences={
+            "my dog has fleas",
+            "i like cold beverages",
+            "the dog ate my homework",
+            "dont have acow man",
+            "i dont think i like fleas",
+            "i am very busy",
+            "hello world i cant talk to you",
+            "chinese is very nice i like it"
+    };
+    private Random random=new Random();
+
+    //初始化操作
+    public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
+        logger.info("------------SentenceSpout open------------");
+        this.outputCollector=spoutOutputCollector;
+        pending=new ConcurrentHashMap<UUID, Values>();
+        timer=new Timer();
+
+        //设置计时器没1s计算时间
+        timer.scheduleAtFixedRate(new TimerTask() {
+            public void run() {
+                //executor.execute(new WordCountTupleTask(new Timestamp(System.currentTimeMillis()),spoutcount));
+                outputCollector.emit(TUPLECOUNT_STREAM_ID,new Values(spoutcount,System.currentTimeMillis(),thisTaskId));
+                spoutcount = 0;
+            }
+        }, 1,1000);// 设定指定的时间time,此处为1000毫秒
+    }
+
+    //向下游输出
+    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+        outputFieldsDeclarer.declareStream(WORDCOUNT_STREAM_ID,new Fields("word"));
+        outputFieldsDeclarer.declareStream(TUPLECOUNT_STREAM_ID,new Fields("tuplecount","timeinfo","taskid"));
+    }
+
+    //核心逻辑
+    public void nextTuple() {
+        int sentencesNum= random.nextInt(sentences.length);
+        String sentence=sentences[sentencesNum];
+        String[] split = sentence.split(" ");
+        String word=split[random.nextInt(split.length)];
+
+        //Storm 的消息ack机制
+        Values value = new Values(sentences[index]);
+        UUID uuid=UUID.randomUUID();
+        pending.put(uuid,value);
+        this.outputCollector.emit(value,uuid);
+        //this.outputCollector.emit(value);
+        
+        index++;
+        if(index>=sentences.length) index=0;
+        
+        outputCollector.emit(WORDCOUNT_STREAM_ID,new Values(word));
+        spoutcount++;
+
+    }
+
+    //Storm 的消息ack机制
+    @Override
+    public void ack(Object msgId) {
+        pending.remove(msgId);
+    }
+
+    @Override
+    public void fail(Object msgId) {
+        this.outputCollector.emit(pending.get(msgId),msgId);
+    }
+
+    @Override
+    public void close() {
+    }
+}
