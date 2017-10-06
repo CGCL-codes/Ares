@@ -68,9 +68,6 @@ public class GameScheduler implements IScheduler {
         List<ExecutorDetails> componentExecutors=new ArrayList<>();
         List<ExecutorDetails> ackExecutors=new ArrayList<>();
 
-        HashMap<WorkerSlot, List<ExecutorDetails>> workerSlotListHashMap = AresUtils.reverseMap(assignment);
-        computeCostUtil.initProcessingCostMap(slots,workerSlotListHashMap);
-
         //The flag indicates whether achieves Nash equilibrium.
         boolean isNashEquilibrium;
 
@@ -87,13 +84,17 @@ public class GameScheduler implements IScheduler {
         /**
          * 首先随机放置 初始化
          */
-        for (ExecutorDetails executor : componentExecutors) {
-            Random random = new Random();
-            int index = random.nextInt(slots.size());
-            assignment.put(executor, slots.get(index));
+        randomAssignment(assignment, componentExecutors, slots);
+        //evenSortAssignment(cluster,topology,assignment,componentExecutors,slots);
+
+        LOG.info("First evenSortAssignment................................");
+        for(ExecutorDetails executor:assignment.keySet()){
+            WorkerSlot slot = assignment.get(executor);
+            LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort());
         }
 
-        //The process of best-response dynamics.
+        HashMap<WorkerSlot, List<ExecutorDetails>> workerSlotListHashMap = AresUtils.reverseMap(assignment);
+        computeCostUtil.initProcessingCostMap(slots,workerSlotListHashMap);
 
         do {
             isNashEquilibrium = true;
@@ -111,7 +112,6 @@ public class GameScheduler implements IScheduler {
                     ////////////////////////////////////////delete//////////////////////////////////////////////
 
                     //Initialize the list of upstream and downstream executors for current executor.
-
                     List<ExecutorDetails> upstreamExecutors = new ArrayList<>();
                     //LOG.info("currentComponent: "+String.valueOf(currentComponent));
                     for (String parentId : currentComponent.parents) {
@@ -129,25 +129,40 @@ public class GameScheduler implements IScheduler {
                     //Initialize the costs of assigning an executor to different slots.
                     Map<WorkerSlot, Double> costExecutorToSlot = new HashMap<WorkerSlot, Double>();
                     for (WorkerSlot slot : slots) {
-                        double totalcost=computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+computeCostUtil.computeProcessingCost(executor,slot);
-                        costExecutorToSlot.put(slot,totalcost);
+                        double totalcost=0.0;
+                        double computeCost=0.0;
+                        double transferringCost=0.0;
+                        double recoveryCost=0.0;
 
+                        computeCost = computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+computeCostUtil.computeProcessingCost(executor,slot);
+//                       LOG.info(computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+" "+computeCostUtil.computeProcessingCost(executor,slot));
                         for(ExecutorDetails upExecutor : upstreamExecutors) {
                             WorkerSlot upSlot=assignment.get(upExecutor);
-                            computeTransferringAndRecoveryCost(nodeToRack,costExecutorToSlot,upSlot,slot,upExecutor,executor);
+                            transferringCost += computeCostUtil.computeTransferringCost(upExecutor,executor,upSlot,slot);
+                            if (nodeToRack.get(slot.getNodeId()).equals(nodeToRack.get(slot.getNodeId()))) {
+                                recoveryCost += computeCostUtil.computeRecoveryCost(upExecutor,executor);
+                            }
                         }
+
                         for(ExecutorDetails downExecutor : downstreamExecutors) {
                             WorkerSlot downSlot=assignment.get(downExecutor);
-                            computeTransferringAndRecoveryCost(nodeToRack, costExecutorToSlot, slot, downSlot, executor, downExecutor);
+                            transferringCost += computeCostUtil.computeTransferringCost(executor,downExecutor,slot,downSlot);
+                            if (nodeToRack.get(slot.getNodeId()).equals(nodeToRack.get(downSlot.getNodeId()))) {
+                                recoveryCost += computeCostUtil.computeRecoveryCost(executor,downExecutor);
+                            }
                         }
+                        totalcost= transferringCost + recoveryCost +computeCost;
+                        costExecutorToSlot.put(slot,totalcost);
+                        LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort()+" computeCost:"+computeCost+" transferringCost:"+transferringCost+" recoveryCost:"+recoveryCost +" "+totalcost );
                     }
 
                     //Make the best-response strategy for an executor.
                     double minCost = Double.MAX_VALUE;
-                    for (Map.Entry<WorkerSlot, Double> entry : costExecutorToSlot.entrySet()) {
-                        if (entry.getValue() < minCost) {
-                            minCost = entry.getValue();
-                            assignment.put(executor, entry.getKey());
+                    for (WorkerSlot slot : costExecutorToSlot.keySet()) {
+                        Double cost = costExecutorToSlot.get(slot);
+                        if (cost < minCost) {
+                            minCost = cost;
+                            assignment.put(executor, slot);
                         }
                     }
 
@@ -170,12 +185,38 @@ public class GameScheduler implements IScheduler {
         /**
          * 将AckEcutor 随机放置到assigment中
          */
-        for (ExecutorDetails executor : ackExecutors) {
+        randomAssignment(assignment, ackExecutors, slots);
+        return assignment;
+    }
+
+    /**
+     * 随机分配componentExecutors到slots上面去
+     * @param assignment
+     * @param Executors
+     * @param slots
+     */
+    private static void randomAssignment(Map<ExecutorDetails, WorkerSlot> assignment, List<ExecutorDetails> Executors, List<WorkerSlot> slots) {
+        for (ExecutorDetails executor : Executors) {
             Random random = new Random();
             int index = random.nextInt(slots.size());
             assignment.put(executor, slots.get(index));
         }
-        return assignment;
+    }
+
+    private static void evenSortAssignment(Cluster cluster, TopologyDetails topology, Map<ExecutorDetails, WorkerSlot> assignment, List<ExecutorDetails> Executors, List<WorkerSlot> slots){
+        Map<WorkerSlot, List<ExecutorDetails>> aliveAssigned = getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());
+        int totalSlotsToUse = Math.min(topology.getNumWorkers(), slots.size() + aliveAssigned.size());
+
+        List<WorkerSlot> sortedList = AresUtils.sortSlots(slots);
+
+        //allow requesting slots number bigger than available slots
+        int toIndex = (totalSlotsToUse - aliveAssigned.size()) > sortedList.size() ? sortedList.size() : (totalSlotsToUse - aliveAssigned.size());
+        List<WorkerSlot> reassignSlots = sortedList.subList(0, toIndex);
+
+        for (int i = 0; i < Executors.size(); i++) {
+            assignment.put(Executors.get(i), reassignSlots.get(i % reassignSlots.size()));
+        }
+
     }
 
     /**
@@ -189,11 +230,14 @@ public class GameScheduler implements IScheduler {
      */
     private static void computeTransferringAndRecoveryCost(Map<String, String> nodeToRack, Map<WorkerSlot, Double> costExecutorToSlot, WorkerSlot slot, WorkerSlot downSlot, ExecutorDetails executor, ExecutorDetails downExecutor) {
         double transferringCost = computeCostUtil.computeTransferringCost(executor,downExecutor,slot,downSlot);
-        costExecutorToSlot.put(slot,costExecutorToSlot.get(slot) + transferringCost);
-        if (nodeToRack.get(slot.getNodeId()).equals(nodeToRack.get(downSlot.getNodeId()))) {
-            double recoveryCost=computeCostUtil.computeRecoveryCost(executor,downExecutor);
-            costExecutorToSlot.put(slot,costExecutorToSlot.get(slot)+ recoveryCost);
+        if(costExecutorToSlot.get(slot) == null || slot==null){
+            int a;
         }
+        costExecutorToSlot.put(slot,costExecutorToSlot.get(slot) + transferringCost);
+//        if (nodeToRack.get(slot.getNodeId()).equals(nodeToRack.get(downSlot.getNodeId()))) {
+//            double recoveryCost=computeCostUtil.computeRecoveryCost(executor,downExecutor);
+//            costExecutorToSlot.put(slot,costExecutorToSlot.get(slot)+ recoveryCost);
+//        }
     }
 
     private static Map<WorkerSlot, List<ExecutorDetails>> getAliveAssignedWorkerSlotExecutors(Cluster cluster, String topologyId) {

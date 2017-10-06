@@ -10,7 +10,6 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +78,7 @@ public class ComputeCostUtil {
     }
 
     /**
-     * computeDataProcessingCost
+     * computeDataProcessingCost 计算数据传输权值
      * @param topology
      * @param executor
      * @param workerSlot
@@ -90,7 +89,7 @@ public class ComputeCostUtil {
         Component component = topology.getComponents().get(currentComponentId);
         Double componentcost = q.get(component.id);
         Double nodecomputecost = lambda.get(workslotToHost(workerSlot));
-        return componentcost*nodecomputecost;
+        return alpha.get(executorToComponent(executor).id)*componentcost*nodecomputecost;
     }
 
     /**
@@ -112,7 +111,7 @@ public class ComputeCostUtil {
         return cluster.getHost(workerSlot.getNodeId());
     }
     /**
-     * 初始化 ExecutorOnSlot的计算时间
+     * 初始化 ExecutorOnSlot的计算时间辅助变量HashMap
      * @param slots
      * @param workerSlotsToExecutors
      */
@@ -124,7 +123,7 @@ public class ComputeCostUtil {
                 Double cost=0.0;
                 for(ExecutorDetails executor:executorDetails){
                     if(!AresUtils.isComponentAcker(topology,executor)){
-                        cost+=alpha.get(executorToComponent(executor).id)*computeDataProcessingCost(topology,executor,slot);
+                        cost+=computeDataProcessingCost(topology,executor,slot);
                     }
                 }
                 totalProcessingCostOfExecutorsOnSlot.put(slot,cost);
@@ -144,7 +143,7 @@ public class ComputeCostUtil {
         int temp = slotContainTaskNum.get(slot);
         slotContainTaskNum.put(slot,--temp);
 
-        double cost = alpha.get(executorToComponent(executor).id)*computeDataProcessingCost(topology, executor, slot);
+        double cost = computeDataProcessingCost(topology, executor, slot);
         Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
         tempCost-=cost;
         totalProcessingCostOfExecutorsOnSlot.put(slot,tempCost);
@@ -159,20 +158,20 @@ public class ComputeCostUtil {
         int temp = slotContainTaskNum.get(slot);
         slotContainTaskNum.put(slot,++temp);
 
-        double cost = alpha.get(executorToComponent(executor).id)*computeDataProcessingCost(topology, executor, slot);
+        double cost = computeDataProcessingCost(topology, executor, slot);
         Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
         tempCost+=cost;
         totalProcessingCostOfExecutorsOnSlot.put(slot,tempCost);
     }
 
     /**
-     * 计算Topology 处理 Cost
+     * Topology 计算权值
      * @param executor
      * @param workerSlot
      * @return
      */
     public double computeProcessingCost(ExecutorDetails executor, WorkerSlot workerSlot){
-        return (slotContainTaskNum.get(workerSlot)+1)*alpha.get(executorToComponent(executor).id)*computeDataProcessingCost(topology,executor,workerSlot);
+        return (slotContainTaskNum.get(workerSlot)+1)*computeDataProcessingCost(topology,executor,workerSlot);
     }
 
     /**

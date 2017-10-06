@@ -11,7 +11,6 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +19,7 @@ import java.util.Map;
 /**
  * locate com.basic.util
  * Created by 79875 on 2017/9/25.
+ * W1*计算延迟 + W2*恢复时间
  * InitParaUtils 工具包
  */
 public class InitParaUtils {
@@ -143,10 +143,10 @@ public class InitParaUtils {
         double temp=0.0;
         List<String> childrensId = component.children;
         if(childrensId.size()==0)
-            return component.execs.size();
+            return 1;
         for(String childId :childrensId){
             Component child = topology.getComponents().get(childId);
-            temp+=component.execs.size()*getChildsPathsNumber(topology,child);
+            temp+=child.execs.size()*getChildsPathsNumber(topology,child);
         }
         return temp;
     }
@@ -161,15 +161,21 @@ public class InitParaUtils {
         double temp=0.0;
         List<String> parentsId = component.parents;
         if(parentsId.size()==0)
-            return component.execs.size();
+            return 1;
         for(String parentId :parentsId){
             Component parent = topology.getComponents().get(parentId);
-            temp+=component.execs.size()*getChildsPathsNumber(topology,parent);
+            temp+=parent.execs.size()*getParentsPathsNumber(topology,parent);
         }
         return temp;
     }
 
-
+    /**
+     * Topology 计算权值
+     * computeCost需要使用Alpha
+     * Alpha经过当前Componet的路径条数/Toplogy总条数*W1
+     * @param topology
+     * @return
+     */
     public static Map<String, Double> initializeAlpha(TopologyDetails topology) {
         Map<String, Double> alpha = new HashMap<>();
 
@@ -179,7 +185,7 @@ public class InitParaUtils {
         Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
         for(String spoutId:spouts.keySet()){
             Component spout = topology.getComponents().get(spoutId);
-            allPathLength+=getChildsPathsNumber(topology,spout);
+            allPathLength+=spout.execs.size()*getChildsPathsNumber(topology,spout);
         }
 
         Map<String, Component> components = topology.getComponents();
@@ -191,11 +197,18 @@ public class InitParaUtils {
             double childPathNumber=getChildsPathsNumber(topology,component);
             double parentPathNumber=getParentsPathsNumber(topology,component);
             double currentExecutorPathNumber=parentPathNumber*childPathNumber;
-            alpha.put(componentId, (currentExecutorPathNumber/allPathLength));
+            alpha.put(componentId, W1*(currentExecutorPathNumber/allPathLength));
         }
         return alpha;
     }
 
+    /**
+     ** Topology 传输时间权值
+     *  TransferringCost需要使用Beta
+     *  Beta经过当前ComponentPair的路径条数/Toplogy总条数*W1
+     * @param topology
+     * @return
+     */
     public static Map<ComponentPair, Double> initializeBeta(TopologyDetails topology) {
         Map<ComponentPair, Double> beta = new HashMap<>();
         //Calculate the total number of paths
@@ -204,7 +217,7 @@ public class InitParaUtils {
         Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
         for(String spoutId:spouts.keySet()){
             Component spout = topology.getComponents().get(spoutId);
-            allPathLength+=getChildsPathsNumber(topology,spout);
+            allPathLength+=spout.execs.size()*getChildsPathsNumber(topology,spout);
         }
 
         Map<String, Component> components = topology.getComponents();
@@ -226,13 +239,21 @@ public class InitParaUtils {
                     //LOG.info("parentPathNumber:"+parentPathNumber+" childPathNumber:"+childPathNumber);
                     double currentPathNumber=parentPathNumber*childPathNumber;
 
-                    double cost=currentPathNumber/allPathLength;
+                    double cost=W1*currentPathNumber/allPathLength;
                     beta.put(new ComponentPair(component,childcomponent),cost);
             }
         }
         return beta;
     }
 
+    /**
+     *  Topology 恢复时间权值
+     *  RecoveryCost需要使用Gama
+     *  Gama W2/当前集群环境机架个数
+     * @param topology
+     * @param cluster
+     * @return
+     */
     public static Map<ComponentPair, Double>  initializeGamma(TopologyDetails topology, Cluster cluster) {
         Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
         Map<ComponentPair, Double> gamma = new HashMap<>();
