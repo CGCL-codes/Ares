@@ -113,9 +113,10 @@ public class ComputeCostUtil {
     /**
      * 初始化 ExecutorOnSlot的计算时间辅助变量HashMap
      * @param slots
-     * @param workerSlotsToExecutors
+     * @param assignment
      */
-    public void initProcessingCostMap(List<WorkerSlot> slots , HashMap<WorkerSlot, List<ExecutorDetails>> workerSlotsToExecutors){
+    public void initProcessingCostMap(List<WorkerSlot> slots , Map<ExecutorDetails, WorkerSlot> assignment){
+        HashMap<WorkerSlot, List<ExecutorDetails>> workerSlotsToExecutors = AresUtils.reverseMap(assignment);
         for(WorkerSlot slot: slots){
             if(workerSlotsToExecutors.containsKey(slot)){
                 List<ExecutorDetails> executorDetails = workerSlotsToExecutors.get(slot);
@@ -185,7 +186,7 @@ public class ComputeCostUtil {
     public double computeTransferringCost(ExecutorDetails upexecutor, ExecutorDetails downexecutor, WorkerSlot upslot, WorkerSlot downslot){
         ComponentPair componentPair=new ComponentPair(executorToComponent(upexecutor),executorToComponent(downexecutor));
         NodePair nodePair=new NodePair(workslotToHost(upslot),workslotToHost(downslot));
-        return beta.get(componentPair) * d.get(nodePair) / 2;
+        return beta.get(componentPair) * d.get(nodePair);
     }
 
     /**
@@ -196,6 +197,6 @@ public class ComputeCostUtil {
      */
     public double computeRecoveryCost(ExecutorDetails upexecutor, ExecutorDetails downexecutor){
         ComponentPair componentPair=new ComponentPair(executorToComponent(upexecutor),executorToComponent(downexecutor));
-        return gamma.get(componentPair) * w.get(componentPair) / 2;
+        return gamma.get(componentPair) * w.get(componentPair);
     }
 }

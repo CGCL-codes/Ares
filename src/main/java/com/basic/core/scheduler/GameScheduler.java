@@ -84,8 +84,8 @@ public class GameScheduler implements IScheduler {
         /**
          * 首先随机放置 初始化
          */
-        randomAssignment(assignment, componentExecutors, slots);
-        //evenSortAssignment(cluster,topology,assignment,componentExecutors,slots);
+        //randomAssignment(assignment, componentExecutors, slots);
+        evenSortAssignment(cluster,topology,assignment,componentExecutors,slots);
 
         LOG.info("First evenSortAssignment................................");
         for(ExecutorDetails executor:assignment.keySet()){
@@ -93,8 +93,9 @@ public class GameScheduler implements IScheduler {
             LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort());
         }
 
-        HashMap<WorkerSlot, List<ExecutorDetails>> workerSlotListHashMap = AresUtils.reverseMap(assignment);
-        computeCostUtil.initProcessingCostMap(slots,workerSlotListHashMap);
+        computeCostUtil.initProcessingCostMap(slots,assignment);
+        double evenUtilityCost = computeUtilityCost(topology, assignment);
+        LOG.info("EvenUtilityCost: "+evenUtilityCost);
 
         do {
             isNashEquilibrium = true;
@@ -138,17 +139,17 @@ public class GameScheduler implements IScheduler {
 //                       LOG.info(computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+" "+computeCostUtil.computeProcessingCost(executor,slot));
                         for(ExecutorDetails upExecutor : upstreamExecutors) {
                             WorkerSlot upSlot=assignment.get(upExecutor);
-                            transferringCost += computeCostUtil.computeTransferringCost(upExecutor,executor,upSlot,slot);
+                            transferringCost += computeCostUtil.computeTransferringCost(upExecutor,executor,upSlot,slot)/2;
                             if (nodeToRack.get(slot.getNodeId()).equals(nodeToRack.get(slot.getNodeId()))) {
-                                recoveryCost += computeCostUtil.computeRecoveryCost(upExecutor,executor);
+                                recoveryCost += computeCostUtil.computeRecoveryCost(upExecutor,executor)/2;
                             }
                         }
 
                         for(ExecutorDetails downExecutor : downstreamExecutors) {
                             WorkerSlot downSlot=assignment.get(downExecutor);
-                            transferringCost += computeCostUtil.computeTransferringCost(executor,downExecutor,slot,downSlot);
+                            transferringCost += computeCostUtil.computeTransferringCost(executor,downExecutor,slot,downSlot)/2;
                             if (nodeToRack.get(slot.getNodeId()).equals(nodeToRack.get(downSlot.getNodeId()))) {
-                                recoveryCost += computeCostUtil.computeRecoveryCost(executor,downExecutor);
+                                recoveryCost += computeCostUtil.computeRecoveryCost(executor,downExecutor)/2;
                             }
                         }
                         totalcost= transferringCost + recoveryCost +computeCost;
@@ -182,12 +183,46 @@ public class GameScheduler implements IScheduler {
             LOG.info("");
         } while (!isNashEquilibrium);
 
+        computeCostUtil.initProcessingCostMap(slots,assignment);
+        double gameUtilityCost = computeUtilityCost(topology, assignment);
+        LOG.info("GameUtilityCost: "+gameUtilityCost);
+
         /**
          * 将AckEcutor 随机放置到assigment中
          */
         randomAssignment(assignment, ackExecutors, slots);
         return assignment;
     }
+
+    private static double computeUtilityCost(TopologyDetails topology, Map<ExecutorDetails, WorkerSlot> assignment){
+        double utilityCost=0.0;
+        double transferringCost=0.0;
+        double recoveryCost=0.0;
+
+        for(WorkerSlot slot:computeCostUtil.slotContainTaskNum.keySet()){
+            int taskNum = computeCostUtil.slotContainTaskNum.get(slot);
+            double singleExecComputeCost = computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot);
+            utilityCost+=taskNum*singleExecComputeCost;
+        }
+
+        for(String compentId : topology.getComponents().keySet()){
+            Component component = topology.getComponents().get(compentId);
+            if (component == null || component.children.size()==0) {
+                continue;
+            }
+            for(String childId :component.children){
+                Component child = topology.getComponents().get(childId);
+                for(ExecutorDetails executor : component.execs)
+                    for(ExecutorDetails childExecutor : child.execs){
+                        transferringCost+=computeCostUtil.computeTransferringCost(executor,childExecutor,assignment.get(executor),assignment.get(childExecutor));
+                        recoveryCost+=computeCostUtil.computeRecoveryCost(executor,childExecutor);
+                    }
+                }
+            }
+
+            utilityCost+=transferringCost+recoveryCost;
+            return utilityCost;
+        }
 
     /**
      * 随机分配componentExecutors到slots上面去
