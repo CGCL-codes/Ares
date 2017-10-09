@@ -20,15 +20,17 @@ public class SentenceSpout extends BaseRichSpout {
     private static Logger logger= LoggerFactory.getLogger(SentenceSpout.class);
 
     public static final String WORDCOUNT_STREAM_ID="wordcountstream";
-    public static final String TUPLECOUNT_STREAM_ID="tuplecountstream";
+    public static final String ACKCOUNT_STREAM_ID="ackcountstream";
+    public static final String LATENCYTIME_STREAM_ID="latencytimestream";
 
     private Timer timer;
     private int thisTaskId =0;
-    private long spoutcount=0; //记录单位时间通过的元组数量
+    private long ackcount=0; //记录单位时间ACK的元组数量
 
     private SpoutOutputCollector outputCollector;
     private int index=0;
     private ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
+    private ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
 
     private String[] sentences={
             "my dog has fleas",
@@ -47,14 +49,15 @@ public class SentenceSpout extends BaseRichSpout {
         logger.info("------------SentenceSpout open------------");
         this.outputCollector=spoutOutputCollector;
         pending=new ConcurrentHashMap<UUID, Values>();
-        timer=new Timer();
+        latencyHashMap=new ConcurrentHashMap<>();
 
+        timer=new Timer();
         //设置计时器没1s计算时间
         timer.scheduleAtFixedRate(new TimerTask() {
             public void run() {
                 //executor.execute(new WordCountTupleTask(new Timestamp(System.currentTimeMillis()),spoutcount));
-                outputCollector.emit(TUPLECOUNT_STREAM_ID,new Values(spoutcount,System.currentTimeMillis(),thisTaskId));
-                spoutcount = 0;
+                outputCollector.emit(ACKCOUNT_STREAM_ID,new Values(ackcount,System.currentTimeMillis(),thisTaskId));
+                ackcount = 0;
             }
         }, 1,1000);// 设定指定的时间time,此处为1000毫秒
     }
@@ -62,7 +65,8 @@ public class SentenceSpout extends BaseRichSpout {
     //向下游输出
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declareStream(WORDCOUNT_STREAM_ID,new Fields("word"));
-        outputFieldsDeclarer.declareStream(TUPLECOUNT_STREAM_ID,new Fields("tuplecount","timeinfo","taskid"));
+        outputFieldsDeclarer.declareStream(ACKCOUNT_STREAM_ID,new Fields("tuplecount","timeinfo","taskid"));
+        outputFieldsDeclarer.declareStream(LATENCYTIME_STREAM_ID,new Fields("latencytime","timeinfo","taskid"));
     }
 
     //核心逻辑
@@ -76,6 +80,8 @@ public class SentenceSpout extends BaseRichSpout {
         Values value = new Values(sentences[index]);
         UUID uuid=UUID.randomUUID();
         pending.put(uuid,value);
+        latencyHashMap.put(uuid,System.currentTimeMillis());
+
         this.outputCollector.emit(value,uuid);
         //this.outputCollector.emit(value);
         
@@ -83,14 +89,20 @@ public class SentenceSpout extends BaseRichSpout {
         if(index>=sentences.length) index=0;
         
         outputCollector.emit(WORDCOUNT_STREAM_ID,new Values(word));
-        spoutcount++;
 
     }
 
     //Storm 的消息ack机制
     @Override
     public void ack(Object msgId) {
+        ackcount++;
         pending.remove(msgId);
+
+        //统计延迟时间
+        Long startTime = latencyHashMap.get(msgId);
+        Long endTime=System.currentTimeMillis();
+        outputCollector.emit(LATENCYTIME_STREAM_ID,new Values(endTime-startTime,endTime,thisTaskId));
+        latencyHashMap.remove(msgId);
     }
 
     @Override
