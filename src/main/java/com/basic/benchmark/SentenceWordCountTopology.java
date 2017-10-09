@@ -11,7 +11,7 @@ import org.apache.storm.utils.Utils;
 
 /**
  * Created by 79875 on 2017/3/7.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTopology stormwordcount 9 9 9
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTopology stormwordcount 9 9 9 true
  */
 public class SentenceWordCountTopology {
     public static final String SENTENCE_SPOUT_ID ="sentence-spout";
@@ -28,8 +28,8 @@ public class SentenceWordCountTopology {
 
         SentenceSpout spout=new SentenceSpout();
         WordCounterBolt wordCountBolt=new WordCounterBolt();
-        SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt();
-        SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
+
+//        SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
         //WordCountReportBolt wordCountReportBolt=new WordCountReportBolt();
 
         TopologyBuilder builder=new TopologyBuilder();
@@ -37,13 +37,16 @@ public class SentenceWordCountTopology {
         Integer spoutparallelism=Integer.valueOf(args[2]);
         Integer wordcountboltparallelism=Integer.valueOf(args[3]);
 
+        Boolean isGameSchedule=Boolean.valueOf(args[4]);
+        SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
+
         builder.setSpout(SENTENCE_SPOUT_ID,spout,spoutparallelism);
         builder.setBolt(COUNT_BOLT_ID,wordCountBolt,wordcountboltparallelism)
                 .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
-        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt)
-                .allGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
+//        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt)
+//                .allGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
 
         //Topology配置
         Config config=new Config();

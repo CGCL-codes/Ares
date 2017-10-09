@@ -18,6 +18,13 @@ import java.util.Map;
  */
 public class SpouThroughputReportBolt extends BaseRichBolt {
     private static Logger logger= LoggerFactory.getLogger(SpouThroughputReportBolt.class);
+
+    private boolean isGameSchedule;
+
+    public SpouThroughputReportBolt(boolean isGameSchedule) {
+        this.isGameSchedule = isGameSchedule;
+    }
+
     private OutputCollector outputCollector;
     public static final String ACKCOUNT_STREAM_ID="ackcountstream";
     public static final String LATENCYTIME_STREAM_ID="latencytimestream";
@@ -35,7 +42,10 @@ public class SpouThroughputReportBolt extends BaseRichBolt {
 
             //将最后结果插入到数据库中
             Timestamp timestamp = new Timestamp(currentTimeMills);
-            DataBaseUtil.insertAresSpoutCount(timestamp, tupplecount, taskid);
+            if(isGameSchedule)
+                DataBaseUtil.insertAresSpoutCount(timestamp, tupplecount, taskid);
+            else
+                DataBaseUtil.insertDefaultSpoutCount(timestamp, tupplecount, taskid);
         }
     }
 

@@ -93,6 +93,14 @@ public class GameScheduler implements IScheduler {
             LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort());
         }
 
+        /**
+         * 重新恢复Schedule
+         */
+        if(executors.size() != allExecutors.size()){
+            randomAssignment(assignment,ackExecutors,slots);
+            return assignment;
+        }
+
         computeCostUtil.initProcessingCostMap(slots,assignment);
         double evenUtilityCost = computeUtilityCost(topology, assignment);
         LOG.info("EvenUtilityCost: "+evenUtilityCost);
@@ -330,9 +338,6 @@ public class GameScheduler implements IScheduler {
         List<ExecutorDetails> allexecutors = new ArrayList<ExecutorDetails>(allExecutors);
 
         LOG.info("reassignSlots size:"+ reassignSlots.size()+" reassignExecutors size:"+executors.size()+" allexecutors size: "+allexecutors.size());
-        if(executors.size() != allexecutors.size()){
-            return reassignment;
-        }
 
         computeCostUtil=ComputeCostUtil.getInstance(topology,cluster);
         computeCostUtil.initPara();
@@ -352,7 +357,6 @@ public class GameScheduler implements IScheduler {
     }
 
     public static void scheduleTopologiesWithGame(Topologies topologies, Cluster cluster) {
-
         for (TopologyDetails topology : cluster.needsSchedulingTopologies(topologies)) {
             String topologyId = topology.getId();
             Map<ExecutorDetails, WorkerSlot> newAssignment = scheduleTopologyWithGame(topology, cluster);

@@ -197,6 +197,22 @@ public class DataBaseUtil {
         }
     }
 
+    public static void insertDefaultSpoutCount(Timestamp time,Long tuplecount,int taskid){
+        try {
+            PreparedStatement preparedStatement;
+            String sql = "INSERT INTO t_defaultspoutcount(time,tuplecount,taskid)"
+                    + " VALUES (?,?,?)";  // 插入数据的sql语句
+            preparedStatement = conn.prepareStatement(sql);    // 创建用于执行静态sql语句的Statement对象
+            preparedStatement.setTimestamp(1,time);
+            preparedStatement.setLong(2,tuplecount);
+            preparedStatement.setInt(3,taskid);
+            int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
+            preparedStatement.close();
+            //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
     /**
      * 插入数据到t_aresspoutlatency表中
      * @param timestamp
