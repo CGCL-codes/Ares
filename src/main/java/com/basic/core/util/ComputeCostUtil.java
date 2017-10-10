@@ -3,10 +3,7 @@ package com.basic.core.util;
 
 import com.basic.core.model.ComponentPair;
 import com.basic.core.model.NodePair;
-import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.ExecutorDetails;
-import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,12 +76,11 @@ public class ComputeCostUtil {
 
     /**
      * computeDataProcessingCost 计算数据传输权值
-     * @param topology
      * @param executor
      * @param workerSlot
      * @return
      */
-    private double computeDataProcessingCost(TopologyDetails topology, ExecutorDetails executor, WorkerSlot workerSlot){
+    private double computeDataProcessingCost( ExecutorDetails executor, WorkerSlot workerSlot){
         String currentComponentId = topology.getExecutorToComponent().get(executor);
         Component component = topology.getComponents().get(currentComponentId);
         Double componentcost = q.get(component.id);
@@ -124,7 +120,7 @@ public class ComputeCostUtil {
                 Double cost=0.0;
                 for(ExecutorDetails executor:executorDetails){
                     if(!AresUtils.isComponentAcker(topology,executor)){
-                        cost+=computeDataProcessingCost(topology,executor,slot);
+                        cost+=computeDataProcessingCost(executor,slot);
                     }
                 }
                 totalProcessingCostOfExecutorsOnSlot.put(slot,cost);
@@ -144,7 +140,7 @@ public class ComputeCostUtil {
         int temp = slotContainTaskNum.get(slot);
         slotContainTaskNum.put(slot,--temp);
 
-        double cost = computeDataProcessingCost(topology, executor, slot);
+        Double cost = computeDataProcessingCost( executor, slot);
         Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
         tempCost-=cost;
         totalProcessingCostOfExecutorsOnSlot.put(slot,tempCost);
@@ -159,7 +155,7 @@ public class ComputeCostUtil {
         int temp = slotContainTaskNum.get(slot);
         slotContainTaskNum.put(slot,++temp);
 
-        double cost = computeDataProcessingCost(topology, executor, slot);
+        Double cost = computeDataProcessingCost( executor, slot);
         Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
         tempCost+=cost;
         totalProcessingCostOfExecutorsOnSlot.put(slot,tempCost);
@@ -172,7 +168,19 @@ public class ComputeCostUtil {
      * @return
      */
     public double computeProcessingCost(ExecutorDetails executor, WorkerSlot workerSlot){
-        return (slotContainTaskNum.get(workerSlot)+1)*computeDataProcessingCost(topology,executor,workerSlot);
+
+        SupervisorDetails supervisorDetails = cluster.getSupervisors().get(workerSlot.getNodeId());
+        List<WorkerSlot> allSlotsSupervisor = AresUtils.getAllSlotsSupervisor(cluster, supervisorDetails);
+        double totalNodeProcessingCost=0.0;
+        int nodeContaintaskNum=0;
+        for(WorkerSlot slot :allSlotsSupervisor){
+            totalNodeProcessingCost+=totalProcessingCostOfExecutorsOnSlot.get(slot);
+            LOG.info(slot+" "+totalProcessingCostOfExecutorsOnSlot.get(slot));
+            nodeContaintaskNum+=slotContainTaskNum.get(slot);
+        }
+        LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" nodeContainTaskNum:"+nodeContaintaskNum+" totalNodeProcessingCost:"+totalNodeProcessingCost);
+        LOG.info("computeDataProcessingCost:"+computeDataProcessingCost(executor,workerSlot));
+        return totalNodeProcessingCost+(nodeContaintaskNum+1)*computeDataProcessingCost(executor,workerSlot);
     }
 
     /**
@@ -198,5 +206,47 @@ public class ComputeCostUtil {
     public double computeRecoveryCost(ExecutorDetails upexecutor, ExecutorDetails downexecutor){
         ComponentPair componentPair=new ComponentPair(executorToComponent(upexecutor),executorToComponent(downexecutor));
         return gamma.get(componentPair) * w.get(componentPair);
+    }
+
+    /**
+     * 计算当前assignment分配的UtilityCost
+     * @param assignment
+     * @return
+     */
+    public double computeUtilityCost( Map<ExecutorDetails, WorkerSlot> assignment){
+        double utilityCost=0.0;
+        double transferringCost=0.0;
+        double recoveryCost=0.0;
+        double computeCost=0.0;
+
+        for(String supervisorId : cluster.getSupervisors().keySet()){
+            SupervisorDetails supervisorDetails = cluster.getSupervisors().get(supervisorId);
+            List<WorkerSlot> allSlotsSupervisor = AresUtils.getAllSlotsSupervisor(cluster, supervisorDetails);
+            double totalNodeProcessingCost=0.0;
+            int nodeContaintaskNum=0;
+            for(WorkerSlot slot :allSlotsSupervisor){
+                totalNodeProcessingCost+=totalProcessingCostOfExecutorsOnSlot.get(slot);
+                nodeContaintaskNum+=slotContainTaskNum.get(slot);
+            }
+            computeCost+=totalNodeProcessingCost*nodeContaintaskNum;
+        }
+
+        for(String compentId : topology.getComponents().keySet()){
+            Component component = topology.getComponents().get(compentId);
+            if (component == null || component.children.size()==0) {
+                continue;
+            }
+            for(String childId :component.children){
+                Component child = topology.getComponents().get(childId);
+                for(ExecutorDetails executor : component.execs)
+                    for(ExecutorDetails childExecutor : child.execs){
+                        transferringCost+=computeTransferringCost(executor,childExecutor,assignment.get(executor),assignment.get(childExecutor));
+                        recoveryCost+=computeRecoveryCost(executor,childExecutor);
+                    }
+            }
+        }
+
+        utilityCost=computeCost+transferringCost+recoveryCost;
+        return utilityCost;
     }
 }

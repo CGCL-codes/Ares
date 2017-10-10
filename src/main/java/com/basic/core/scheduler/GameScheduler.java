@@ -15,33 +15,6 @@ public class GameScheduler implements IScheduler {
 
     private static ComputeCostUtil computeCostUtil;
 
-    private static List<WorkerSlot> getAllSlots(Cluster cluster){
-        List<WorkerSlot> slots = new ArrayList<WorkerSlot>();
-        for (SupervisorDetails supervisor :cluster.getSupervisors().values()) {
-            slots.addAll(getAllSlotsSupervisor(cluster,supervisor));
-        }
-
-        return slots;
-    }
-
-    /**
-     * Return all the available slots on this supervisor.
-     */
-    private static List<WorkerSlot> getAllSlotsSupervisor(Cluster cluster, SupervisorDetails supervisor) {
-        Set<Integer> ports = getAllPorts(cluster,supervisor);
-        List<WorkerSlot> slots = new ArrayList<WorkerSlot>(ports.size());
-
-        for (Integer port : ports) {
-            slots.add(new WorkerSlot(supervisor.getId(), port));
-        }
-        return slots;
-    }
-
-    private static Set<Integer> getAllPorts(Cluster cluster, SupervisorDetails supervisor) {
-        Set<Integer> ret = new HashSet<>();
-        ret.addAll(cluster.getAssignablePorts(supervisor));
-        return ret;
-    }
 
     private static Map<String, String> getNodeToRack(Cluster cluster){
         //Initialize the network topology.
@@ -102,7 +75,7 @@ public class GameScheduler implements IScheduler {
         }
 
         computeCostUtil.initProcessingCostMap(slots,assignment);
-        double evenUtilityCost = computeUtilityCost(topology, assignment);
+        double evenUtilityCost = computeCostUtil.computeUtilityCost(assignment);
         LOG.info("EvenUtilityCost: "+evenUtilityCost);
 
         do {
@@ -143,7 +116,7 @@ public class GameScheduler implements IScheduler {
                         double transferringCost=0.0;
                         double recoveryCost=0.0;
 
-                        computeCost = computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+computeCostUtil.computeProcessingCost(executor,slot);
+                        computeCost = computeCostUtil.computeProcessingCost(executor,slot);
 //                       LOG.info(computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+" "+computeCostUtil.computeProcessingCost(executor,slot));
                         for(ExecutorDetails upExecutor : upstreamExecutors) {
                             WorkerSlot upSlot=assignment.get(upExecutor);
@@ -192,8 +165,11 @@ public class GameScheduler implements IScheduler {
         } while (!isNashEquilibrium);
 
         computeCostUtil.initProcessingCostMap(slots,assignment);
-        double gameUtilityCost = computeUtilityCost(topology, assignment);
+        double gameUtilityCost = computeCostUtil.computeUtilityCost(assignment);
         LOG.info("GameUtilityCost: "+gameUtilityCost);
+
+        //打散在同一个Node节点下的Executor
+        randomNodeSlotAssignment(topology,cluster,assignment);
 
         /**
          * 将AckEcutor 随机放置到assigment中
@@ -202,35 +178,28 @@ public class GameScheduler implements IScheduler {
         return assignment;
     }
 
-    private static double computeUtilityCost(TopologyDetails topology, Map<ExecutorDetails, WorkerSlot> assignment){
-        double utilityCost=0.0;
-        double transferringCost=0.0;
-        double recoveryCost=0.0;
-
-        for(WorkerSlot slot:computeCostUtil.slotContainTaskNum.keySet()){
-            int taskNum = computeCostUtil.slotContainTaskNum.get(slot);
-            double singleExecComputeCost = computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot);
-            utilityCost+=taskNum*singleExecComputeCost;
+    private static void randomNodeSlotAssignment(TopologyDetails topology, Cluster cluster, Map<ExecutorDetails, WorkerSlot> assignment) {
+        Map<ExecutorDetails, SupervisorDetails> nodeSlotAssignment=new HashMap<>();
+        for(ExecutorDetails executor : assignment.keySet()){
+            WorkerSlot slot=assignment.get(executor);
+            SupervisorDetails supervisorDetails = cluster.getSupervisors().get(slot.getNodeId());
+            nodeSlotAssignment.put(executor,supervisorDetails);
         }
-
-        for(String compentId : topology.getComponents().keySet()){
-            Component component = topology.getComponents().get(compentId);
-            if (component == null || component.children.size()==0) {
-                continue;
+        HashMap<SupervisorDetails, List<ExecutorDetails>> supervisorDetailsListHashMap = AresUtils.reverseMap(nodeSlotAssignment);
+        assignment.clear();
+        for(SupervisorDetails supervisorDetails :supervisorDetailsListHashMap.keySet()){
+            List<ExecutorDetails> executorDetails = supervisorDetailsListHashMap.get(supervisorDetails);
+            List<WorkerSlot> allSlotsSupervisor = AresUtils.getAllSlotsSupervisor(cluster, supervisorDetails);
+            for(int i=0;i<executorDetails.size();i++){
+                assignment.put(executorDetails.get(i),allSlotsSupervisor.get(i%allSlotsSupervisor.size()));
             }
-            for(String childId :component.children){
-                Component child = topology.getComponents().get(childId);
-                for(ExecutorDetails executor : component.execs)
-                    for(ExecutorDetails childExecutor : child.execs){
-                        transferringCost+=computeCostUtil.computeTransferringCost(executor,childExecutor,assignment.get(executor),assignment.get(childExecutor));
-                        recoveryCost+=computeCostUtil.computeRecoveryCost(executor,childExecutor);
-                    }
-                }
-            }
-
-            utilityCost+=transferringCost+recoveryCost;
-            return utilityCost;
         }
+        LOG.info("reassignment:"+ assignment+"\n");
+        for(ExecutorDetails executor:assignment.keySet()){
+            WorkerSlot slot = assignment.get(executor);
+            LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort());
+        }
+    }
 
     /**
      * 随机分配componentExecutors到slots上面去
@@ -301,7 +270,7 @@ public class GameScheduler implements IScheduler {
 
         //TODO Storm 每10s钟 调用schedule方法
         List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
-        List<WorkerSlot> allSlots = getAllSlots(cluster);
+        List<WorkerSlot> allSlots = AresUtils.getAllSlots(cluster);
 
         LOG.info("GameScheldueing AvaliableWorkSlot................................");
         for(WorkerSlot slot:availableSlots){

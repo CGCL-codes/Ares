@@ -1,8 +1,6 @@
 package com.basic.core.util;
 
-import org.apache.storm.scheduler.ExecutorDetails;
-import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.*;
 
 import java.util.*;
 
@@ -11,6 +9,35 @@ import java.util.*;
  * Created by 79875 on 2017/10/4.
  */
 public class AresUtils {
+
+    public static List<WorkerSlot> getAllSlots(Cluster cluster){
+        List<WorkerSlot> slots = new ArrayList<WorkerSlot>();
+        for (SupervisorDetails supervisor :cluster.getSupervisors().values()) {
+            slots.addAll(getAllSlotsSupervisor(cluster,supervisor));
+        }
+
+        return slots;
+    }
+
+    /**
+     * Return all the available slots on this supervisor.
+     */
+    public static List<WorkerSlot> getAllSlotsSupervisor(Cluster cluster, SupervisorDetails supervisor) {
+        Set<Integer> ports = getAllPorts(cluster,supervisor);
+        List<WorkerSlot> slots = new ArrayList<WorkerSlot>(ports.size());
+
+        for (Integer port : ports) {
+            slots.add(new WorkerSlot(supervisor.getId(), port));
+        }
+        return slots;
+    }
+
+    public static Set<Integer> getAllPorts(Cluster cluster, SupervisorDetails supervisor) {
+        Set<Integer> ret = new HashSet<>();
+        ret.addAll(cluster.getAssignablePorts(supervisor));
+        return ret;
+    }
+
     public static <K, V> HashMap<V, List<K>> reverseMap(Map<K, V> map) {
         HashMap<V, List<K>> rtn = new HashMap<V, List<K>>();
         if (map == null) {
