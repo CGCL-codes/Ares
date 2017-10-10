@@ -11,10 +11,8 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 /**
  * locate com.basic.util
@@ -75,33 +73,33 @@ public class InitParaUtils {
      * @param w
      * @param layer
      */
-    public static void initializeWRecursiveConstruction(TopologyDetails topology, Component component, Map<ComponentPair, Double> w, int layer){
-        layer++;//层数+1
-        List<String> parentsId = component.parents;
-
-        //过滤掉根节点 spout
-        if(parentsId.size()!=0) {
-            double upComponetExces = 0.0;
-            for (String parentId : parentsId) {
-                Component parent = topology.getComponents().get(parentId);
-                upComponetExces += parent.execs.size();
-            }
-            //以componet为目标节点插入所有权值
-            insertWModel(topology, component, upComponetExces * layer, w);
-        }
-
-        List<String> childsId = component.children;
-        if (childsId.size() == 0) {
-            return;
-        }
-
-        //递归调用遍历整个topology结构图
-        for(String childId :childsId){
-            Component child = topology.getComponents().get(childId);
-            initializeWRecursiveConstruction(topology,child,w,layer);
-        }
-
-    }
+//    public static void initializeWRecursiveConstruction(TopologyDetails topology, Component component, Map<ComponentPair, Double> w, int layer){
+//        layer++;//层数+1
+//        List<String> parentsId = component.parents;
+//
+//        //过滤掉根节点 spout
+//        if(parentsId.size()!=0) {
+//            double upComponetExces = 0.0;
+//            for (String parentId : parentsId) {
+//                Component parent = topology.getComponents().get(parentId);
+//                upComponetExces += parent.execs.size();
+//            }
+//            //以componet为目标节点插入所有权值
+//            insertWModel(topology, component, upComponetExces * layer, w);
+//        }
+//
+//        List<String> childsId = component.children;
+//        if (childsId.size() == 0) {
+//            return;
+//        }
+//
+//        //递归调用遍历整个topology结构图
+//        for(String childId :childsId){
+//            Component child = topology.getComponents().get(childId);
+//            initializeWRecursiveConstruction(topology,child,w,layer);
+//        }
+//
+//    }
 
     /**
      * 插入到w RecoverTime恢复模型
@@ -120,15 +118,27 @@ public class InitParaUtils {
     }
 
 
-    //The parameter w denotes the recover time of upstream and downstream executor pairs.
+    /**
+     * Topology 恢复时间权值权值
+     * computeCost需要使用Alpha
+     * Alpha经过当前Componet的路径条数/Toplogy总条数*W1
+     * @param topology
+     * @return
+     */
     public static Map<ComponentPair, Double>  initializeW(TopologyDetails topology) {
         Map<ComponentPair, Double> w = new HashMap<>();
 
-        Map<String, SpoutSpec> spouts = topology.getTopology().get_spouts();
-        for(String spoutId:spouts.keySet()){
-            Component spout = topology.getComponents().get(spoutId);
-            int layer=0;
-            initializeWRecursiveConstruction(topology,spout,w,layer);
+        for(String compentId:topology.getComponents().keySet()){
+            Component component = topology.getComponents().get(compentId);
+            int layer=AresUtils.getLayer(topology,component);
+            List<String> parentsId = component.parents;
+            double upComponetExces = 0.0;
+            for (String parentId : parentsId) {
+                Component parent = topology.getComponents().get(parentId);
+                upComponetExces += parent.execs.size();
+            }
+            //以componet为目标节点插入所有权值
+            insertWModel(topology, component, upComponetExces * layer, w);
         }
         return w;
     }

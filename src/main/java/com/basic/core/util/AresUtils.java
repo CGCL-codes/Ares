@@ -1,6 +1,7 @@
 package com.basic.core.util;
 
 import org.apache.storm.scheduler.*;
+import org.apache.storm.scheduler.resource.Component;
 
 import java.util.*;
 
@@ -38,6 +39,26 @@ public class AresUtils {
         return ret;
     }
 
+    /**
+     * 得到当前Componet在topology中的层数
+     * @param topology
+     * @param component
+     * @return
+     */
+    public static int getLayer(TopologyDetails topology,Component component){
+        if(component.parents.size()==0)
+            return 1;
+
+        List<String> parentsId = component.parents;
+        List<Integer> layeList=new ArrayList<>();
+        for(String parentid :parentsId){
+            layeList.add(getLayer(topology,topology.getComponents().get(parentid)));
+        }
+        Collections.sort(layeList);
+        return layeList.get(0)+1;
+    }
+
+
     public static <K, V> HashMap<V, List<K>> reverseMap(Map<K, V> map) {
         HashMap<V, List<K>> rtn = new HashMap<V, List<K>>();
         if (map == null) {
@@ -67,15 +88,26 @@ public class AresUtils {
      * @return
      */
     public static List<WorkerSlot> sortSlots(List<WorkerSlot> availableSlots) {
+        //For example, we have a three nodes(supervisor1, supervisor2, supervisor3) cluster:
+        //slots before sort:
+        //supervisor1:6700, supervisor1:6701,
+        //supervisor2:6700, supervisor2:6701, supervisor2:6702,
+        //supervisor3:6700, supervisor3:6703, supervisor3:6702, supervisor3:6701
+        //slots after sort:
+        //supervisor3:6700, supervisor2:6700, supervisor1:6700,
+        //supervisor3:6701, supervisor2:6701, supervisor1:6701,
+        //supervisor3:6702, supervisor2:6702,
+        //supervisor3:6703
+
         if (availableSlots != null && availableSlots.size() > 0) {
             // group by node
-            Map<String, List<WorkerSlot>> slotGroups = new TreeMap<String, List<WorkerSlot>>();
+            Map<String, List<WorkerSlot>> slotGroups = new TreeMap<>();
             for (WorkerSlot slot : availableSlots) {
                 String node = slot.getNodeId();
                 List<WorkerSlot> slots = null;
-                if(slotGroups.containsKey(node)){
+                if (slotGroups.containsKey(node)) {
                     slots = slotGroups.get(node);
-                }else{
+                } else {
                     slots = new ArrayList<WorkerSlot>();
                     slotGroups.put(node, slots);
                 }
@@ -90,10 +122,7 @@ public class AresUtils {
                         return o1.getPort() - o2.getPort();
                     }
                 });
-
             }
-
-
 
             // sort by available slots size: from large to small
             List<List<WorkerSlot>> list = new ArrayList<List<WorkerSlot>>(slotGroups.values());
@@ -103,7 +132,6 @@ public class AresUtils {
                     return o2.size() - o1.size();
                 }
             });
-
 
             return interleaveAll(list);
         }

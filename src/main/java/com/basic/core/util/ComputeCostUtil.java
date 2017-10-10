@@ -72,6 +72,51 @@ public class ComputeCostUtil {
         alpha = InitParaUtils.initializeAlpha(topology);
         beta = InitParaUtils.initializeBeta(topology);
         gamma = InitParaUtils.initializeGamma(topology,cluster);
+        printAlllPara();
+    }
+
+    private void printAlllPara() {
+        LOG.info("------------------parameter q-------------------");
+        for(String compentId:q.keySet()){
+            LOG.info(compentId+"\t"+q.get(compentId));
+        }
+        LOG.info("");
+
+        LOG.info("------------------parameter lambda-------------------");
+        for(String hostId:lambda.keySet()){
+            LOG.info(hostId+"\t"+lambda.get(hostId));
+        }
+        LOG.info("");
+
+        LOG.info("------------------parameter d-------------------");
+        for(NodePair nodePair:d.keySet()){
+            LOG.info(nodePair.getUpnode()+"\t"+nodePair.getDownnode()+"\t"+d.get(nodePair));
+        }
+        LOG.info("");
+
+        LOG.info("------------------parameter w-------------------");
+        for(ComponentPair componentPair:w.keySet()){
+            LOG.info(componentPair.getUpcomponent().id+"\t"+componentPair.getdowncomponent().id+"\t"+w.get(componentPair));
+        }
+        LOG.info("");
+
+        LOG.info("------------------parameter alpha-------------------");
+        for(String componentId:alpha.keySet()){
+            LOG.info(componentId+"\t"+alpha.get(componentId));
+        }
+        LOG.info("");
+
+        LOG.info("------------------parameter beta-------------------");
+        for(ComponentPair componentPair:beta.keySet()){
+            LOG.info(componentPair.getUpcomponent().id+"\t"+componentPair.getdowncomponent().id+"\t"+beta.get(componentPair));
+        }
+        LOG.info("");
+
+        LOG.info("------------------parameter gama-------------------");
+        for(ComponentPair componentPair:gamma.keySet()){
+            LOG.info(componentPair.getUpcomponent().id+"\t"+componentPair.getdowncomponent().id+"\t"+gamma.get(componentPair));
+        }
+        LOG.info("");
     }
 
     /**
@@ -140,8 +185,8 @@ public class ComputeCostUtil {
         int temp = slotContainTaskNum.get(slot);
         slotContainTaskNum.put(slot,--temp);
 
-        Double cost = computeDataProcessingCost( executor, slot);
-        Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
+        double cost = computeDataProcessingCost( executor, slot);
+        double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
         tempCost-=cost;
         totalProcessingCostOfExecutorsOnSlot.put(slot,tempCost);
     }
@@ -155,8 +200,8 @@ public class ComputeCostUtil {
         int temp = slotContainTaskNum.get(slot);
         slotContainTaskNum.put(slot,++temp);
 
-        Double cost = computeDataProcessingCost( executor, slot);
-        Double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
+        double cost = computeDataProcessingCost( executor, slot);
+        double tempCost = totalProcessingCostOfExecutorsOnSlot.get(slot);
         tempCost+=cost;
         totalProcessingCostOfExecutorsOnSlot.put(slot,tempCost);
     }
@@ -175,11 +220,12 @@ public class ComputeCostUtil {
         int nodeContaintaskNum=0;
         for(WorkerSlot slot :allSlotsSupervisor){
             totalNodeProcessingCost+=totalProcessingCostOfExecutorsOnSlot.get(slot);
-            LOG.info(slot+" "+totalProcessingCostOfExecutorsOnSlot.get(slot));
+            //LOG.info(slot+" "+totalProcessingCostOfExecutorsOnSlot.get(slot));
             nodeContaintaskNum+=slotContainTaskNum.get(slot);
         }
-        LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" nodeContainTaskNum:"+nodeContaintaskNum+" totalNodeProcessingCost:"+totalNodeProcessingCost);
-        LOG.info("computeDataProcessingCost:"+computeDataProcessingCost(executor,workerSlot));
+        //LOG.info("");
+        //LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" nodeContainTaskNum:"+nodeContaintaskNum+" totalNodeProcessingCost:"+totalNodeProcessingCost);
+        //LOG.info("computeDataProcessingCost:"+computeDataProcessingCost(executor,workerSlot));
         return totalNodeProcessingCost+(nodeContaintaskNum+1)*computeDataProcessingCost(executor,workerSlot);
     }
 
