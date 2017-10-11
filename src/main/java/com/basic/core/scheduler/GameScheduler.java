@@ -31,7 +31,7 @@ public class GameScheduler implements IScheduler {
         return nodeToRack;
     }
 
-    private static Map<ExecutorDetails, WorkerSlot> gameScheduling(TopologyDetails topology, Cluster cluster, List<ExecutorDetails> allExecutors, List<ExecutorDetails> executors, List<WorkerSlot> slots) {
+    private static Map<ExecutorDetails, WorkerSlot> gameScheduling(final TopologyDetails topology, Cluster cluster, List<ExecutorDetails> allExecutors, List<ExecutorDetails> executors, List<WorkerSlot> slots) {
         LOG.info("gameScheduling................................");
 
         //Assign an executor to a slot randomly.
@@ -44,12 +44,6 @@ public class GameScheduler implements IScheduler {
         //The flag indicates whether achieves Nash equilibrium.
         boolean isNashEquilibrium;
 
-        LOG.info("reassignExecutors................................");
-        for(ExecutorDetails executor:executors){
-            LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask());
-        }
-        LOG.info("");
-
         /**
          * 初始化componentExecutor 和 ackExecutors
          */
@@ -59,6 +53,22 @@ public class GameScheduler implements IScheduler {
             else
                 componentExecutors.add(executor);
         }
+
+        Collections.sort(componentExecutors, new Comparator<ExecutorDetails>() {
+            @Override
+            public int compare(ExecutorDetails o1, ExecutorDetails o2) {
+                Component component1 = topology.getComponents().get(topology.getExecutorToComponent().get(o1));
+                Component component2 = topology.getComponents().get(topology.getExecutorToComponent().get(o2));
+                //升序排序
+                return AresUtils.getLayer(topology,component1)-AresUtils.getLayer(topology,component2);
+            }
+        });
+
+        LOG.info("reassignExecutors................................");
+        for(ExecutorDetails executor:componentExecutors){
+            LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask());
+        }
+        LOG.info("");
 
         /**
          * 首先随机放置 初始化
@@ -326,16 +336,6 @@ public class GameScheduler implements IScheduler {
 
         computeCostUtil=ComputeCostUtil.getInstance(topology,cluster);
         computeCostUtil.initPara();
-
-        Collections.sort(executors, new Comparator<ExecutorDetails>() {
-            @Override
-            public int compare(ExecutorDetails o1, ExecutorDetails o2) {
-                Component component1 = topology.getComponents().get(o1);
-                Component component2 = topology.getComponents().get(o2);
-                //升序排序
-                return AresUtils.getLayer(topology,component2)-AresUtils.getLayer(topology,component1);
-            }
-        });
 
         reassignment = gameScheduling(topology, cluster,allexecutors, executors, reassignSlots);
 
