@@ -60,7 +60,15 @@ public class GameScheduler implements IScheduler {
                 Component component1 = topology.getComponents().get(topology.getExecutorToComponent().get(o1));
                 Component component2 = topology.getComponents().get(topology.getExecutorToComponent().get(o2));
                 //升序排序
-                return AresUtils.getLayer(topology,component1)-AresUtils.getLayer(topology,component2);
+                int layer1 = AresUtils.getLayer(topology, component1);
+                int layer2 = AresUtils.getLayer(topology, component2);
+                if(layer1==layer2){
+                   if(component1.execs.size()==component2.execs.size()){
+                       return component1.id.hashCode()-component2.id.hashCode();
+                   }else
+                       return component2.execs.size()-component1.execs.size();
+                }else
+                    return layer1-layer2;
             }
         });
 
