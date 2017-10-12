@@ -48,6 +48,7 @@ public class SentenceSpout extends BaseRichSpout {
     public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
         logger.info("------------SentenceSpout open------------");
         this.outputCollector=spoutOutputCollector;
+        this.thisTaskId=topologyContext.getThisTaskId();
         pending=new ConcurrentHashMap<UUID, Values>();
         latencyHashMap=new ConcurrentHashMap<>();
 
