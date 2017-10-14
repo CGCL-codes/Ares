@@ -11,7 +11,7 @@ import org.apache.storm.utils.Utils;
 
 /**
  * Created by 79875 on 2017/3/7.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTopology stormwordcount 9 9 9 true
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTopology stormwordcount 8 8 8 false 60
  */
 public class SentenceWordCountTopology {
     public static final String SENTENCE_SPOUT_ID ="sentence-spout";
@@ -25,10 +25,6 @@ public class SentenceWordCountTopology {
     public static final String LATENCYTIME_STREAM_ID="latencytimestream";
 
     public static void main(String[] args) throws Exception {
-
-        SentenceSpout spout=new SentenceSpout();
-        WordCounterBolt wordCountBolt=new WordCounterBolt();
-
 //        SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
         //WordCountReportBolt wordCountReportBolt=new WordCountReportBolt();
 
@@ -38,6 +34,9 @@ public class SentenceWordCountTopology {
         Integer wordcountboltparallelism=Integer.valueOf(args[3]);
 
         Boolean isGameSchedule=Boolean.valueOf(args[4]);
+        Long waitTimeMills=Long.valueOf(args[5]);
+        SentenceSpout spout=new SentenceSpout(waitTimeMills);
+        WordCounterBolt wordCountBolt=new WordCounterBolt(waitTimeMills);
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
         builder.setSpout(SENTENCE_SPOUT_ID,spout,spoutparallelism);

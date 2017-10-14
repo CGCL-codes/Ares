@@ -35,6 +35,7 @@ public class KafkaWordCountTopology {
         Integer numworkers=Integer.valueOf(args[2]);
         Integer spoutparallelism=Integer.valueOf(args[3]);
         Integer countboltparallelism=Integer.valueOf(args[4]);
+        Long waitTimeMills=Long.valueOf(args[5]);
 
         BrokerHosts brokerHosts = new ZkHosts(zks,"/kafka/brokers");
         SpoutConfig spoutConf = new SpoutConfig(brokerHosts, topic, zkRoot, id);
@@ -53,7 +54,7 @@ public class KafkaWordCountTopology {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(KAFKA_SPOUT_ID, kafkaSpout, spoutparallelism);
-        builder.setBolt(COUNT_BOLT_ID, new WordCounterBolt(), countboltparallelism)
+        builder.setBolt(COUNT_BOLT_ID, new WordCounterBolt(waitTimeMills), countboltparallelism)
                 .fieldsGrouping(KAFKA_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
                 //.shuffleGrouping(KAFKA_SPOUT_ID);
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)

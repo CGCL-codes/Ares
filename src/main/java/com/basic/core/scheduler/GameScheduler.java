@@ -15,7 +15,6 @@ public class GameScheduler implements IScheduler {
 
     private static ComputeCostUtil computeCostUtil;
 
-
     private static Map<String, String> getNodeToRack(Cluster cluster){
         //Initialize the network topology.
         Map<String, List<String>> networkTopography = cluster.getNetworkTopography();
@@ -36,6 +35,7 @@ public class GameScheduler implements IScheduler {
 
         //Assign an executor to a slot randomly.
         Map<ExecutorDetails, WorkerSlot> assignment = new HashMap<ExecutorDetails, WorkerSlot>();
+        Map<ExecutorDetails, WorkerSlot> tempassignment = new HashMap<ExecutorDetails, WorkerSlot>();
         Map<String, String> nodeToRack = getNodeToRack(cluster);
 
         List<ExecutorDetails> componentExecutors=new ArrayList<>();
@@ -53,6 +53,12 @@ public class GameScheduler implements IScheduler {
             else
                 componentExecutors.add(executor);
         }
+
+        ////////////////////////////////////////EvenUtilityCost/////////////////////////////////////////////////////////
+        evenSortAssignment(tempassignment,componentExecutors,slots);
+        double evenUtilityCost = computeCostUtil.computeUtilityCost(assignment);
+        LOG.info("EvenUtilityCost: "+evenUtilityCost);
+        ////////////////////////////////////////EvenUtilityCost/////////////////////////////////////////////////////////
 
         Collections.sort(componentExecutors, new Comparator<ExecutorDetails>() {
             @Override
@@ -82,7 +88,7 @@ public class GameScheduler implements IScheduler {
          * 首先随机放置 初始化
          */
         //randomAssignment(assignment, componentExecutors, slots);
-        evenSortAssignment(cluster,topology,assignment,componentExecutors,slots);
+        evenSortAssignment(assignment,componentExecutors,slots);
 
         LOG.info("First evenSortAssignment................................");
         for(ExecutorDetails executor:assignment.keySet()){
@@ -100,8 +106,6 @@ public class GameScheduler implements IScheduler {
         }
 
         computeCostUtil.initProcessingCostMap(slots,assignment);
-        double evenUtilityCost = computeCostUtil.computeUtilityCost(assignment);
-        LOG.info("EvenUtilityCost: "+evenUtilityCost);
 
         do {
             isNashEquilibrium = true;
@@ -249,7 +253,7 @@ public class GameScheduler implements IScheduler {
         }
     }
 
-    private static void evenSortAssignment(Cluster cluster, TopologyDetails topology, Map<ExecutorDetails, WorkerSlot> assignment, List<ExecutorDetails> Executors, List<WorkerSlot> slots){
+    private static void evenSortAssignment( Map<ExecutorDetails, WorkerSlot> assignment, List<ExecutorDetails> Executors, List<WorkerSlot> slots){
 //        Map<WorkerSlot, List<ExecutorDetails>> aliveAssigned = getAliveAssignedWorkerSlotExecutors(cluster, topology.getId());
 //        int totalSlotsToUse = Math.min(topology.getNumWorkers(), slots.size() + aliveAssigned.size());
 

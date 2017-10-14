@@ -1,5 +1,6 @@
 package com.basic.benchmark;
 
+import com.basic.core.util.AresUtils;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -31,11 +32,20 @@ public class WordCounterBolt extends BaseRichBolt {
     private Timer timer;
     private long tupplecount=0; //记录单位时间通过的元组数量
     private int thisTaskId =0;
+
+    private boolean isSlowDown;
+    private long waitTimeMills;
+
+    public WordCounterBolt(long waitTimeMills) {
+        this.waitTimeMills = waitTimeMills;
+    }
+
     @Override
     public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
         thisTaskId = context.getThisTaskIndex();
         this.outputCollector = collector;
         timer=new Timer();
+        isSlowDown=AresUtils.isSlowDown();
 
         //设置计时器没1s计算时间
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -50,7 +60,6 @@ public class WordCounterBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         tupplecount++;
-
         String word = tuple.getStringByField("word");
         if (!word.isEmpty()) {
             Long count = counts.get(word);

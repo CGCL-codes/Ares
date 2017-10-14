@@ -1,5 +1,6 @@
 package com.basic.benchmark;
 
+import com.basic.core.util.AresUtils;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -42,13 +43,23 @@ public class SentenceSpout extends BaseRichSpout {
             "hello world i cant talk to you",
             "chinese is very nice i like it"
     };
+    private boolean isSlowDown;
+    private long waitTimeMills;
+
     private Random random=new Random();
+
+    public SentenceSpout(long waitTimeMills) {
+        this.waitTimeMills = waitTimeMills;
+    }
 
     //初始化操作
     public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
         logger.info("------------SentenceSpout open------------");
         this.outputCollector=spoutOutputCollector;
+
         this.thisTaskId=topologyContext.getThisTaskId();
+        isSlowDown=AresUtils.isSlowDown();
+
         pending=new ConcurrentHashMap<UUID, Values>();
         latencyHashMap=new ConcurrentHashMap<>();
 
@@ -88,7 +99,10 @@ public class SentenceSpout extends BaseRichSpout {
         
         index++;
         if(index>=sentences.length) index=0;
-        
+
+        if(isSlowDown){
+            AresUtils.waitForTimeMillis(waitTimeMills);
+        }
         outputCollector.emit(WORDCOUNT_STREAM_ID,new Values(word));
 
     }
