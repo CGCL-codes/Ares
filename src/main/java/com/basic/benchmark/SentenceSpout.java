@@ -10,6 +10,7 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,22 +28,15 @@ public class SentenceSpout extends BaseRichSpout {
     private Timer timer;
     private int thisTaskId =0;
     private long ackcount=0; //记录单位时间ACK的元组数量
+    private LatencyModel latencyModel=new LatencyModel();
 
     private SpoutOutputCollector outputCollector;
     private int index=0;
     private ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
     private ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
 
-    private String[] sentences={
-            "my dog has fleas",
-            "i like cold beverages",
-            "the dog ate my homework",
-            "dont have acow man",
-            "i dont think i like fleas",
-            "i am very busy",
-            "hello world i cant talk to you",
-            "chinese is very nice i like it"
-    };
+    //private String[] words=new String[175000000];
+
     private boolean isSlowDown;
     private long waitTimeMills;
 
@@ -50,6 +44,15 @@ public class SentenceSpout extends BaseRichSpout {
 
     public SentenceSpout(long waitTimeMills) {
         this.waitTimeMills = waitTimeMills;
+    }
+
+    private String randomWords(int wordLength){
+        char[] chars=new char[wordLength];
+        for(int i=0;i<wordLength;i++){
+            char c=(char)('A'+Math.random()*('Z'-'A'+1));
+            chars[i]=c;
+        }
+        return new String(chars);
     }
 
     //初始化操作
@@ -62,6 +65,9 @@ public class SentenceSpout extends BaseRichSpout {
 
         pending=new ConcurrentHashMap<UUID, Values>();
         latencyHashMap=new ConcurrentHashMap<>();
+//        for(int i=0;i<175000000;i++){
+//            words[i]=randomWords(5);
+//        }
 
         timer=new Timer();
         //设置计时器没1s计算时间
@@ -70,6 +76,9 @@ public class SentenceSpout extends BaseRichSpout {
                 //executor.execute(new WordCountTupleTask(new Timestamp(System.currentTimeMillis()),spoutcount));
                 outputCollector.emit(ACKCOUNT_STREAM_ID,new Values(ackcount,System.currentTimeMillis(),thisTaskId));
                 ackcount = 0;
+
+                outputCollector.emit(LATENCYTIME_STREAM_ID,new Values(latencyModel.computeAvglatency(),System.currentTimeMillis(),thisTaskId));
+
             }
         }, 1,1000);// 设定指定的时间time,此处为1000毫秒
     }
@@ -83,28 +92,22 @@ public class SentenceSpout extends BaseRichSpout {
 
     //核心逻辑
     public void nextTuple() {
-        int sentencesNum= random.nextInt(sentences.length);
-        String sentence=sentences[sentencesNum];
-        String[] split = sentence.split(" ");
-        String word=split[random.nextInt(split.length)];
-
-        //Storm 的消息ack机制
-        Values value = new Values(sentences[index]);
-        UUID uuid=UUID.randomUUID();
-        pending.put(uuid,value);
-        latencyHashMap.put(uuid,System.currentTimeMillis());
-
-        this.outputCollector.emit(value,uuid);
-        //this.outputCollector.emit(value);
-        
-        index++;
-        if(index>=sentences.length) index=0;
+//        if(index>=words.length)
+//            return;
 
         if(isSlowDown){
             AresUtils.waitForTimeMillis(waitTimeMills);
         }
-        outputCollector.emit(WORDCOUNT_STREAM_ID,new Values(word));
 
+        //String word=words[index];
+        String word=randomWords(5);
+        //Storm 的消息ack机制
+        Values value = new Values(word);
+        UUID uuid=UUID.randomUUID();
+        pending.put(uuid,value);
+        latencyHashMap.put(uuid,System.currentTimeMillis());
+
+        outputCollector.emit(WORDCOUNT_STREAM_ID,value,uuid);
     }
 
     //Storm 的消息ack机制
@@ -116,7 +119,7 @@ public class SentenceSpout extends BaseRichSpout {
         //统计延迟时间
         Long startTime = latencyHashMap.get(msgId);
         Long endTime=System.currentTimeMillis();
-        outputCollector.emit(LATENCYTIME_STREAM_ID,new Values(endTime-startTime,endTime,thisTaskId));
+        latencyModel.computeLatency(endTime-startTime);
         latencyHashMap.remove(msgId);
     }
 
@@ -128,4 +131,37 @@ public class SentenceSpout extends BaseRichSpout {
     @Override
     public void close() {
     }
+}
+
+class LatencyModel implements Serializable{
+    private Long totalLatency=0L;
+    private Long totalTuple=0L;
+
+    public Long getTotalLatency() {
+        return totalLatency;
+    }
+
+    public void setTotalLatency(Long totalLatency) {
+        this.totalLatency = totalLatency;
+    }
+
+    public Long getTotalTuple() {
+        return totalTuple;
+    }
+
+    public void setTotalTuple(Long totalTuple) {
+        this.totalTuple = totalTuple;
+    }
+
+    synchronized public void computeLatency(Long latency){
+        totalTuple++;
+        totalLatency+=latency;
+    }
+
+    public long computeAvglatency(){
+        if(totalTuple==0)
+            return 0;
+        return totalLatency/totalTuple;
+    }
+
 }

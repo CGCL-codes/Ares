@@ -11,10 +11,7 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * locate com.basic.storm.bolt
@@ -28,8 +25,10 @@ public class WordCounterBolt extends BaseRichBolt {
 
     private Map<String, Long> counts = new HashMap<String, Long>();
     private OutputCollector outputCollector;
+    private List<Tuple> tupleList=new ArrayList<>();
 
     private Timer timer;
+    private Timer wordcountTimer;
     private long tupplecount=0; //记录单位时间通过的元组数量
     private int thisTaskId =0;
 
@@ -45,6 +44,7 @@ public class WordCounterBolt extends BaseRichBolt {
         thisTaskId = context.getThisTaskIndex();
         this.outputCollector = collector;
         timer=new Timer();
+        wordcountTimer=new Timer();
         isSlowDown=AresUtils.isSlowDown();
 
         //设置计时器没1s计算时间
@@ -55,6 +55,14 @@ public class WordCounterBolt extends BaseRichBolt {
                 tupplecount = 0;
             }
         }, 1,1000);// 设定指定的时间time,此处为1000毫秒
+
+//        wordcountTimer.scheduleAtFixedRate(new TimerTask() {
+//            public void run() {
+//                if(tupleList.size()==0){
+//
+//                }
+//            }
+//        }, 1,500);// 设定指定的时间time,此处为1000毫秒
     }
 
     @Override
@@ -68,14 +76,14 @@ public class WordCounterBolt extends BaseRichBolt {
             }
             count++;
             counts.put(word, count);
-            outputCollector.emit(WORDCOUNT_STREAM_ID,tuple,new Values(word,count));
+            //outputCollector.emit(WORDCOUNT_STREAM_ID,tuple,new Values(word,count));
         }
         outputCollector.ack(tuple);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(WORDCOUNT_STREAM_ID,new Fields("word", "count"));
+        //declarer.declareStream(WORDCOUNT_STREAM_ID,new Fields("word", "count"));
         declarer.declareStream(TUPLECOUNT_STREAM_ID,new Fields("tuplecount","timeinfo","taskid"));
     }
 

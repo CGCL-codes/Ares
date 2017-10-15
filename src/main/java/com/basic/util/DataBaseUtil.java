@@ -136,15 +136,16 @@ public class DataBaseUtil {
      * @param word
      * @param count
      */
-    public static void insertAresWordCount(Timestamp time,String word,Long count){
+    public static void insertAresWordCount(Timestamp time,String word,Long count,Integer number){
         try {
             PreparedStatement preparedStatement;
-            String sql = "INSERT INTO t_areswordcount(time,word,count)"
-                    + " VALUES (?,?,?)";  // 插入数据的sql语句
+            String sql = "INSERT INTO t_areswordcount(time,word,count,number)"
+                    + " VALUES (?,?,?,?)";  // 插入数据的sql语句
             preparedStatement = conn.prepareStatement(sql);    // 创建用于执行静态sql语句的Statement对象
             preparedStatement.setTimestamp(1,time);
             preparedStatement.setString(2,word);
             preparedStatement.setLong(3,count);
+            preparedStatement.setInt(4,number);
             int num = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_wordcount (time,word,count) values"+time+" "+word+" "+count);

@@ -54,9 +54,18 @@ public class GameScheduler implements IScheduler {
                 componentExecutors.add(executor);
         }
 
+        /**
+         * 重新恢复Schedule
+         */
+        if(executors.size() != allExecutors.size()){
+            randomAssignment(assignment,ackExecutors,slots);
+            return assignment;
+        }
+
         ////////////////////////////////////////EvenUtilityCost/////////////////////////////////////////////////////////
         evenSortAssignment(tempassignment,componentExecutors,slots);
-        double evenUtilityCost = computeCostUtil.computeUtilityCost(assignment);
+        computeCostUtil.initProcessingCostMap(slots,tempassignment);
+        double evenUtilityCost = computeCostUtil.computeUtilityCost(tempassignment);
         LOG.info("EvenUtilityCost: "+evenUtilityCost);
         ////////////////////////////////////////EvenUtilityCost/////////////////////////////////////////////////////////
 
@@ -96,14 +105,6 @@ public class GameScheduler implements IScheduler {
             LOG.info("compentId:"+topology.getExecutorToComponent().get(executor)+" executorId:"+executor.getStartTask()+" host:"+cluster.getHost(slot.getNodeId())+" port:"+slot.getPort());
         }
         LOG.info("");
-
-        /**
-         * 重新恢复Schedule
-         */
-        if(executors.size() != allExecutors.size()){
-            randomAssignment(assignment,ackExecutors,slots);
-            return assignment;
-        }
 
         computeCostUtil.initProcessingCostMap(slots,assignment);
 

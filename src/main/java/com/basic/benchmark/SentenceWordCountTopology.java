@@ -37,6 +37,7 @@ public class SentenceWordCountTopology {
         Long waitTimeMills=Long.valueOf(args[5]);
         SentenceSpout spout=new SentenceSpout(waitTimeMills);
         WordCounterBolt wordCountBolt=new WordCounterBolt(waitTimeMills);
+        SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
         builder.setSpout(SENTENCE_SPOUT_ID,spout,spoutparallelism);
@@ -44,8 +45,8 @@ public class SentenceWordCountTopology {
                 .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
-//        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt)
-//                .allGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
+        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt)
+                .allGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
 
         //Topology配置
         Config config=new Config();
