@@ -10,8 +10,12 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,14 +30,12 @@ public class SentenceSpout extends BaseRichSpout {
     public static final String ACKCOUNT_STREAM_ID="ackcountstream";
     public static final String LATENCYTIME_STREAM_ID="latencytimestream";
 
-    private Timer latencyTimer;
     private Timer throughputTimer;
     private int thisTaskId =0;
     private long ackcount=0; //记录单位时间ACK的元组数量
-    private Queue<Long> latencyQueue=new ArrayDeque<>();//用来收集 Latency List 链表
+    private Queue<LatencyModel> latencyQueue=new ArrayDeque<>();//用来收集 Latency List 链表
 
     private SpoutOutputCollector outputCollector;
-    private int index=0;
 
     private ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
     private ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
@@ -41,7 +43,8 @@ public class SentenceSpout extends BaseRichSpout {
     private boolean isSlowDown;
     private long waitTimeMills;
     private Lock lock=new ReentrantLock();//用来控制延迟输出的Lock
-    private Random random=new Random();
+    private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>());
 
     public SentenceSpout(long waitTimeMills) {
         this.waitTimeMills = waitTimeMills;
@@ -77,16 +80,6 @@ public class SentenceSpout extends BaseRichSpout {
             }
         }, 1,1000);// 设定指定的时间time,此处为1000毫秒
 
-        latencyTimer=new Timer();
-        latencyTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                for(int i=0;i<latencyQueue.size();i++){
-                    Long latencyTime = latencyQueue.poll();
-                    outputCollector.emit(LATENCYTIME_STREAM_ID, new Values(latencyTime, System.currentTimeMillis(), thisTaskId));
-                }
-            }
-        },1,700);
     }
 
     //向下游输出
@@ -119,9 +112,18 @@ public class SentenceSpout extends BaseRichSpout {
         pending.remove(msgId);
 
         //统计延迟时间
-        Long startTime = latencyHashMap.get(msgId);
-        Long endTime=System.currentTimeMillis();
-        latencyQueue.add(endTime-startTime);
+        final Long startTime = latencyHashMap.get(msgId);
+        final Long endTime=System.currentTimeMillis();
+        //latencyQueue.add(new LatencyModel(endTime-startTime,endTime));
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+//                LatencyModel poll = latencyQueue.poll();
+//                Long latencyTime = poll.getLatencyTime();
+//                Long currentTimes=poll.getCurrentTimes();
+                outputCollector.emit(LATENCYTIME_STREAM_ID, new Values(endTime-startTime, endTime, thisTaskId));
+            }
+        });
         latencyHashMap.remove(msgId);
     }
 
@@ -135,6 +137,34 @@ public class SentenceSpout extends BaseRichSpout {
     }
 }
 
+class LatencyModel implements Serializable{
+    private Long latencyTime;
+    private Long currentTimes;
+
+    public LatencyModel(Long latencyTime, Long currentTimes) {
+        this.latencyTime = latencyTime;
+        this.currentTimes = currentTimes;
+    }
+
+    public LatencyModel() {
+    }
+
+    public Long getLatencyTime() {
+        return latencyTime;
+    }
+
+    public void setLatencyTime(Long latencyTime) {
+        this.latencyTime = latencyTime;
+    }
+
+    public Long getCurrentTimes() {
+        return currentTimes;
+    }
+
+    public void setCurrentTimes(Long currentTimes) {
+        this.currentTimes = currentTimes;
+    }
+}
 //class LatencyModel implements Serializable{
 //    private Long totalLatency=0L;
 //    private Long totalTuple=0L;
