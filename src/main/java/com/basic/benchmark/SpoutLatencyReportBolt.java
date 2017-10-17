@@ -30,10 +30,9 @@ public class SpoutLatencyReportBolt extends BaseRichBolt {
             Long currentTimeMills = tuple.getLongByField("timeinfo");
             Long latencyTime = tuple.getLongByField("latencytime");
             int taskid = tuple.getIntegerByField("taskid");
-
             //将最后结果插入到数据库中
             Timestamp timestamp = new Timestamp(currentTimeMills);
-            DataBaseUtil.insertAresSpoutLatency(timestamp, latencyTime, taskid);
+            DataBaseUtil.insertAresSpoutLatency(timestamp, Long.valueOf(latencyTime), taskid);
         }
     }
 

@@ -45,8 +45,8 @@ public class SentenceWordCountTopology {
                 .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
-        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt)
-                .allGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
+        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt,9)
+                .shuffleGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
 
         //Topology配置
         Config config=new Config();

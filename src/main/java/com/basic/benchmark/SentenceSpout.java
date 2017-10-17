@@ -30,10 +30,11 @@ public class SentenceSpout extends BaseRichSpout {
     private Timer throughputTimer;
     private int thisTaskId =0;
     private long ackcount=0; //记录单位时间ACK的元组数量
-    private List<Long> latencyList=new ArrayList<>();//用来收集 Latency List 链表
+    private Queue<Long> latencyQueue=new ArrayDeque<>();//用来收集 Latency List 链表
 
     private SpoutOutputCollector outputCollector;
     private int index=0;
+
     private ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
     private ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
 
@@ -80,14 +81,12 @@ public class SentenceSpout extends BaseRichSpout {
         latencyTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Iterator<Long> iterator = latencyList.iterator();
-                for(int i=0;i<latencyList.size();i++){
-                    Long latencyTime = iterator.next();
+                for(int i=0;i<latencyQueue.size();i++){
+                    Long latencyTime = latencyQueue.poll();
                     outputCollector.emit(LATENCYTIME_STREAM_ID, new Values(latencyTime, System.currentTimeMillis(), thisTaskId));
-                    iterator.remove();
                 }
             }
-        },1,2600);
+        },1,700);
     }
 
     //向下游输出
@@ -122,7 +121,7 @@ public class SentenceSpout extends BaseRichSpout {
         //统计延迟时间
         Long startTime = latencyHashMap.get(msgId);
         Long endTime=System.currentTimeMillis();
-        latencyList.add(endTime-startTime);
+        latencyQueue.add(endTime-startTime);
         latencyHashMap.remove(msgId);
     }
 
