@@ -116,12 +116,6 @@ public class GameScheduler implements IScheduler {
                 String currentComponentId = topology.getExecutorToComponent().get(executor);
                 Component currentComponent = topology.getComponents().get(currentComponentId);
 
-//                LOG.info("host\tport\ttotalProcessOnslot\tContainTaskNum");
-//                for(WorkerSlot slot:computeCostUtil.totalProcessingCostOfExecutorsOnSlot.keySet()){
-//                    LOG.info(cluster.getHost(slot.getNodeId())+"\t"+slot.getPort()+"\t"+computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+"\t"+computeCostUtil.slotContainTaskNum.get(slot));
-//                }
-//                LOG.info("");
-
                 if(currentComponent!=null){
                     //过滤掉__acker的ExecutorDetails
 

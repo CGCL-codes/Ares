@@ -1,19 +1,20 @@
 package com.basic.benchmark;
 
-
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
-
+import org.apache.storm.topology.BoltDeclarer;
+import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
 /**
- * Created by 79875 on 2017/3/7.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTopology stormwordcount 9 9 9 false 60
+ * locate com.basic.benchmark.schedule
+ * Created by 79875 on 2017/10/17.
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceWordCountTopology stormwordcount 9 9 9 false 60
  */
-public class SentenceWordCountTopology {
+public class ResourceWordCountTopology {
     public static final String SENTENCE_SPOUT_ID ="sentence-spout";
     public static final String COUNT_BOLT_ID = "count-bolt";
     public static final String REPORT_BOLT_ID= "report-bolt";
@@ -40,18 +41,32 @@ public class SentenceWordCountTopology {
         SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
-        builder.setSpout(SENTENCE_SPOUT_ID,spout,spoutparallelism);
-        builder.setBolt(COUNT_BOLT_ID,wordCountBolt,wordcountboltparallelism)
-                .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
-        builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
-                .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
-        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,spoutLatencyReportBolt)
-                .allGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
+        SpoutDeclarer spoutDeclarer = builder.setSpout(SENTENCE_SPOUT_ID, spout, spoutparallelism);
+        BoltDeclarer wordCDeclarer = builder.setBolt(COUNT_BOLT_ID, wordCountBolt, wordcountboltparallelism)
+                .fieldsGrouping(SENTENCE_SPOUT_ID, WORDCOUNT_STREAM_ID, new Fields("word"));
+        BoltDeclarer throughputBoltDeclarer = builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID, spouThroughputReportBolt)
+                .allGrouping(SENTENCE_SPOUT_ID, ACKCOUNT_STREAM_ID);
+        BoltDeclarer latencyBoltDeclarer1 = builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID, spoutLatencyReportBolt)
+                .allGrouping(SENTENCE_SPOUT_ID, LATENCYTIME_STREAM_ID);
+
+        spoutDeclarer.setCPULoad(20);
+        wordCDeclarer.setCPULoad(40);
+        throughputBoltDeclarer.setCPULoad(50);
+        //latencyBoltDeclarer1.setCPULoad(50);
 
         //Topology配置
         Config config=new Config();
         config.setNumWorkers(numworkers);//设置两个Worker进程 10
-        //config.setNumAckers(0);//每个Work进程会运行一个Acker任务，这里将Ack任务设置为0 禁止Ack任务
+
+        config.setTopologyWorkerMaxHeapSize(4096.0);
+
+        //topology priority describing the importance of the topology in decreasing importance starting from 0 (i.e. 0 is the highest priority and the priority importance decreases as the priority number increases).
+        //Recommended range of 0-29 but no hard limit set.
+        config.setTopologyPriority(29);
+
+        // Set strategy to schedule topology. If not specified, default to org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy
+        config.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class);
+
         if(args[0].equals("local")){
             LocalCluster localCluster=new LocalCluster();
 
@@ -65,4 +80,3 @@ public class SentenceWordCountTopology {
 
     }
 }
-

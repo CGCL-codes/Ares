@@ -24,7 +24,7 @@ public class InitParaUtils {
     private static final Logger LOG = LoggerFactory.getLogger(InitParaUtils.class);
     //The parameter W1 and W2 denote the weight of the stream` response time and the stream recovery time, respectively;
     // public static double W1, W2;
-    public static double W1 = 0.9, W2 = 0.1;
+    public static double W1 = 0.6, W2 = 0.4;
 
     //The parameter q denotes the computation cost for executors to process a single tuple.
     public static Map<String, Double> initializeQ(TopologyDetails topology) {

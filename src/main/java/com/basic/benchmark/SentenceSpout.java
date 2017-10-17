@@ -10,9 +10,10 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by dello on 2016/10/15.
@@ -25,21 +26,20 @@ public class SentenceSpout extends BaseRichSpout {
     public static final String ACKCOUNT_STREAM_ID="ackcountstream";
     public static final String LATENCYTIME_STREAM_ID="latencytimestream";
 
-    private Timer timer;
+    private Timer latencyTimer;
+    private Timer throughputTimer;
     private int thisTaskId =0;
     private long ackcount=0; //记录单位时间ACK的元组数量
-    private LatencyModel latencyModel=new LatencyModel();
+    private List<Long> latencyList=new ArrayList<>();//用来收集 Latency List 链表
 
     private SpoutOutputCollector outputCollector;
     private int index=0;
     private ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
     private ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
 
-    //private String[] words=new String[175000000];
-
     private boolean isSlowDown;
     private long waitTimeMills;
-
+    private Lock lock=new ReentrantLock();//用来控制延迟输出的Lock
     private Random random=new Random();
 
     public SentenceSpout(long waitTimeMills) {
@@ -65,22 +65,29 @@ public class SentenceSpout extends BaseRichSpout {
 
         pending=new ConcurrentHashMap<UUID, Values>();
         latencyHashMap=new ConcurrentHashMap<>();
-//        for(int i=0;i<175000000;i++){
-//            words[i]=randomWords(5);
-//        }
 
-        timer=new Timer();
+        throughputTimer=new Timer();
         //设置计时器没1s计算时间
-        timer.scheduleAtFixedRate(new TimerTask() {
+        throughputTimer.scheduleAtFixedRate(new TimerTask() {
             public void run() {
                 //executor.execute(new WordCountTupleTask(new Timestamp(System.currentTimeMillis()),spoutcount));
                 outputCollector.emit(ACKCOUNT_STREAM_ID,new Values(ackcount,System.currentTimeMillis(),thisTaskId));
                 ackcount = 0;
-
-                outputCollector.emit(LATENCYTIME_STREAM_ID,new Values(latencyModel.computeAvglatency(),System.currentTimeMillis(),thisTaskId));
-
             }
         }, 1,1000);// 设定指定的时间time,此处为1000毫秒
+
+        latencyTimer=new Timer();
+        latencyTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Iterator<Long> iterator = latencyList.iterator();
+                for(int i=0;i<latencyList.size();i++){
+                    Long latencyTime = iterator.next();
+                    outputCollector.emit(LATENCYTIME_STREAM_ID, new Values(latencyTime, System.currentTimeMillis(), thisTaskId));
+                    iterator.remove();
+                }
+            }
+        },1,2600);
     }
 
     //向下游输出
@@ -92,14 +99,10 @@ public class SentenceSpout extends BaseRichSpout {
 
     //核心逻辑
     public void nextTuple() {
-//        if(index>=words.length)
-//            return;
-
         if(isSlowDown){
             AresUtils.waitForTimeMillis(waitTimeMills);
         }
 
-        //String word=words[index];
         String word=randomWords(5);
         //Storm 的消息ack机制
         Values value = new Values(word);
@@ -119,7 +122,7 @@ public class SentenceSpout extends BaseRichSpout {
         //统计延迟时间
         Long startTime = latencyHashMap.get(msgId);
         Long endTime=System.currentTimeMillis();
-        latencyModel.computeLatency(endTime-startTime);
+        latencyList.add(endTime-startTime);
         latencyHashMap.remove(msgId);
     }
 
@@ -133,35 +136,35 @@ public class SentenceSpout extends BaseRichSpout {
     }
 }
 
-class LatencyModel implements Serializable{
-    private Long totalLatency=0L;
-    private Long totalTuple=0L;
-
-    public Long getTotalLatency() {
-        return totalLatency;
-    }
-
-    public void setTotalLatency(Long totalLatency) {
-        this.totalLatency = totalLatency;
-    }
-
-    public Long getTotalTuple() {
-        return totalTuple;
-    }
-
-    public void setTotalTuple(Long totalTuple) {
-        this.totalTuple = totalTuple;
-    }
-
-    synchronized public void computeLatency(Long latency){
-        totalTuple++;
-        totalLatency+=latency;
-    }
-
-    public long computeAvglatency(){
-        if(totalTuple==0)
-            return 0;
-        return totalLatency/totalTuple;
-    }
-
-}
+//class LatencyModel implements Serializable{
+//    private Long totalLatency=0L;
+//    private Long totalTuple=0L;
+//
+//    public Long getTotalLatency() {
+//        return totalLatency;
+//    }
+//
+//    public void setTotalLatency(Long totalLatency) {
+//        this.totalLatency = totalLatency;
+//    }
+//
+//    public Long getTotalTuple() {
+//        return totalTuple;
+//    }
+//
+//    public void setTotalTuple(Long totalTuple) {
+//        this.totalTuple = totalTuple;
+//    }
+//
+//    synchronized public void computeLatency(Long latency){
+//        totalTuple++;
+//        totalLatency+=latency;
+//    }
+//
+//    public long computeAvglatency(){
+//        if(totalTuple==0)
+//            return 0;
+//        return totalLatency/totalTuple;
+//    }
+//
+//}
