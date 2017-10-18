@@ -1,5 +1,8 @@
 package com.basic.benchmark;
 
+import com.basic.benchmark.bolt.report.SpouThroughputReportBolt;
+import com.basic.benchmark.bolt.WordCounterBolt;
+import com.basic.benchmark.spout.WordCountKafkaSpout;
 import com.basic.util.MyScheme;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -14,17 +17,14 @@ import org.apache.storm.tuple.Fields;
 
 import java.util.Arrays;
 
+import static com.basic.benchmark.Constants.*;
+
 /**
  * Created by 79875 on 2017/3/3.
  * storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.KafkaWordCountTopology tweetswordtopic3 stormkafka 9 9 9 true
  */
 public class KafkaWordCountTopology {
-    public static final String KAFKA_SPOUT_ID ="kafka-spout";
-    public static final String COUNT_BOLT_ID = "count-bolt";
-    public static final String TOPOLOGY_NAME= "kafka-wordcount-topology";
-    public static final String SPOUT_THROUGHPUTREPORT_BOLT_ID= "spout-throughputreport-bolt";
-    public static final String WORDCOUNT_STREAM_ID="wordcountstream";
-    public static final String ACKCOUNT_STREAM_ID="ackcountstream";
+    private static final String TOPOLOGY_NAME= "sentence-wordcount-topology";
     public static void main(String[] args) throws InvalidTopologyException, AuthorizationException, AlreadyAliveException, InterruptedException {
         String zks = "root2:2181,root4:2181,root5:2181";
 //        String topic = "tweetsword2";

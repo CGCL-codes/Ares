@@ -1,4 +1,4 @@
-package com.basic.benchmark;
+package com.basic.benchmark.model;
 
 /**
  * Created by 79875 on 2017/3/7.

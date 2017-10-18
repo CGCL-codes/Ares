@@ -107,11 +107,11 @@ public class GameScheduler implements IScheduler {
         LOG.info("");
 
         computeCostUtil.initProcessingCostMap(slots,assignment);
-
+        int numRank=0;
         do {
             isNashEquilibrium = true;
             //Make the best-response strategy for each executor by turn.
-
+            numRank++;
             for (ExecutorDetails executor : componentExecutors) {
                 String currentComponentId = topology.getExecutorToComponent().get(executor);
                 Component currentComponent = topology.getComponents().get(currentComponentId);
@@ -200,7 +200,7 @@ public class GameScheduler implements IScheduler {
         computeCostUtil.initProcessingCostMap(slots,assignment);
         double gameUtilityCost = computeCostUtil.computeUtilityCost(assignment);
         LOG.info("GameUtilityCost: "+gameUtilityCost);
-
+        LOG.info("Rank Num "+numRank);
         //打散在同一个Node节点下的Executor
         randomNodeSlotAssignment(topology,cluster,assignment);
 
@@ -261,7 +261,6 @@ public class GameScheduler implements IScheduler {
         for (int i = 0; i < Executors.size(); i++) {
             assignment.put(Executors.get(i), reassignSlots.get(i % reassignSlots.size()));
         }
-
     }
 
     /**

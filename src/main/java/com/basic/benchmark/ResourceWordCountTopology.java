@@ -1,5 +1,9 @@
 package com.basic.benchmark;
 
+import com.basic.benchmark.bolt.report.LatencyReportBolt;
+import com.basic.benchmark.bolt.report.SpouThroughputReportBolt;
+import com.basic.benchmark.bolt.WordCounterBolt;
+import com.basic.benchmark.spout.SentenceSpout;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -9,24 +13,18 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
+import static com.basic.benchmark.Constants.*;
+
 /**
  * locate com.basic.benchmark.schedule
  * Created by 79875 on 2017/10/17.
  * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceWordCountTopology stormwordcount 9 9 9 false 60
  */
 public class ResourceWordCountTopology {
-    public static final String SENTENCE_SPOUT_ID ="sentence-spout";
-    public static final String COUNT_BOLT_ID = "count-bolt";
-    public static final String REPORT_BOLT_ID= "report-bolt";
-    public static final String SPOUT_THROUGHPUTREPORT_BOLT_ID= "spout-throughputreport-bolt";
-    public static final String SPOUT_LATENCYREPORT_BOLT_ID= "spout-latencyreport-bolt";
-    public static final String TOPOLOGY_NAME= "sentence-wordcount-topology";
-    public static final String WORDCOUNT_STREAM_ID="wordcountstream";
-    public static final String ACKCOUNT_STREAM_ID="ackcountstream";
-    public static final String LATENCYTIME_STREAM_ID="latencytimestream";
 
+    private static final String TOPOLOGY_NAME= "sentence-wordcount-topology";
     public static void main(String[] args) throws Exception {
-//        SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
+//        LatencyReportBolt latencyReportBolt=new LatencyReportBolt();
         //WordCountReportBolt wordCountReportBolt=new WordCountReportBolt();
 
         TopologyBuilder builder=new TopologyBuilder();
@@ -38,7 +36,7 @@ public class ResourceWordCountTopology {
         Long waitTimeMills=Long.valueOf(args[5]);
         SentenceSpout spout=new SentenceSpout(waitTimeMills);
         WordCounterBolt wordCountBolt=new WordCounterBolt(waitTimeMills);
-        SpoutLatencyReportBolt spoutLatencyReportBolt=new SpoutLatencyReportBolt();
+        LatencyReportBolt latencyReportBolt =new LatencyReportBolt();
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
         SpoutDeclarer spoutDeclarer = builder.setSpout(SENTENCE_SPOUT_ID, spout, spoutparallelism);
@@ -46,7 +44,7 @@ public class ResourceWordCountTopology {
                 .fieldsGrouping(SENTENCE_SPOUT_ID, WORDCOUNT_STREAM_ID, new Fields("word"));
         BoltDeclarer throughputBoltDeclarer = builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID, spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID, ACKCOUNT_STREAM_ID);
-        BoltDeclarer latencyBoltDeclarer1 = builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID, spoutLatencyReportBolt)
+        BoltDeclarer latencyBoltDeclarer1 = builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID, latencyReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID, LATENCYTIME_STREAM_ID);
 
         spoutDeclarer.setCPULoad(20);

@@ -1,10 +1,14 @@
 package com.basic.benchmark;
 
+/**
+ * locate com.basic.benchmark
+ * Created by 79875 on 2017/10/17.
+ */
 
-import com.basic.benchmark.bolt.WordCounterBolt;
-import com.basic.benchmark.bolt.report.LatencyReportBolt;
 import com.basic.benchmark.bolt.report.SpouThroughputReportBolt;
-import com.basic.benchmark.spout.SentenceSpout;
+import com.basic.benchmark.bolt.report.LatencyReportBolt;
+import com.basic.benchmark.bolt.WordCounterBolt;
+import com.basic.benchmark.spout.SentenceSpoutTemp;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -16,10 +20,11 @@ import static com.basic.benchmark.Constants.*;
 
 /**
  * Created by 79875 on 2017/3/7.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTopology stormwordcount 9 9 9 9 false 60
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountTempTopology stormwordcount 9 9 9 1 false 60
  */
-public class SentenceWordCountTopology {
+public class SentenceWordCountTempTopology {
 
+    private static final String TOPOLOGY_NAME= "sentence-wordcount-topology";
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder=new TopologyBuilder();
         Integer numworkers=Integer.valueOf(args[1]);
@@ -29,9 +34,9 @@ public class SentenceWordCountTopology {
 
         Boolean isGameSchedule=Boolean.valueOf(args[5]);
         Long waitTimeMills=Long.valueOf(args[6]);
-        SentenceSpout spout=new SentenceSpout(waitTimeMills);
+        SentenceSpoutTemp spout=new SentenceSpoutTemp(waitTimeMills);
         WordCounterBolt wordCountBolt=new WordCounterBolt(waitTimeMills);
-        LatencyReportBolt latencyReportBolt=new LatencyReportBolt();
+        LatencyReportBolt latencyReportBolt =new LatencyReportBolt();
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
         builder.setSpout(SENTENCE_SPOUT_ID,spout,spoutparallelism);
@@ -39,8 +44,8 @@ public class SentenceWordCountTopology {
                 .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
-        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,latencyReportBolt,latencyreportboltparallelism)
-                .shuffleGrouping(COUNT_BOLT_ID,LATENCYTIME_STREAM_ID);
+        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID, latencyReportBolt,latencyreportboltparallelism)
+                .shuffleGrouping(SENTENCE_SPOUT_ID,LATENCYTIME_STREAM_ID);
 
         //Topology配置
         Config config=new Config();

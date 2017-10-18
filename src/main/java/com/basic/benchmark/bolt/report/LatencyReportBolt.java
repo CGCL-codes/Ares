@@ -1,6 +1,6 @@
-package com.basic.benchmark;
+package com.basic.benchmark.bolt.report;
 
-import com.basic.util.DataBaseUtil;
+import com.basic.benchmark.task.InsertAresSpoutLatencyTask;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -11,18 +11,22 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * locate com.basic.benchmark
  * Created by 79875 on 2017/10/8.
  */
-public class SpoutLatencyReportBolt extends BaseRichBolt {
-    private static Logger logger = LoggerFactory.getLogger(SpoutLatencyReportBolt.class);
-    public static final String ACKCOUNT_STREAM_ID = "ackcountstream";
-    public static final String LATENCYTIME_STREAM_ID = "latencytimestream";
-
+public class LatencyReportBolt extends BaseRichBolt {
+    private static Logger logger = LoggerFactory.getLogger(LatencyReportBolt.class);
+    private static final String ACKCOUNT_STREAM_ID = "ackcountstream";
+    private static final String LATENCYTIME_STREAM_ID = "latencytimestream";
+    private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 10, 200, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>());
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
-        logger.info("------------SpoutLatencyReportBolt prepare------------");
+        logger.info("------------LatencyReportBolt prepare------------");
     }
 
     public void execute(Tuple tuple) {
@@ -32,7 +36,8 @@ public class SpoutLatencyReportBolt extends BaseRichBolt {
             int taskid = tuple.getIntegerByField("taskid");
             //将最后结果插入到数据库中
             Timestamp timestamp = new Timestamp(currentTimeMills);
-            DataBaseUtil.insertAresSpoutLatency(timestamp, Long.valueOf(latencyTime), taskid);
+            InsertAresSpoutLatencyTask task=new InsertAresSpoutLatencyTask(timestamp,latencyTime,taskid);
+            executor.execute(task);
         }
     }
 

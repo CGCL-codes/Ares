@@ -1,4 +1,4 @@
-package com.basic.benchmark;
+package com.basic.benchmark.bolt.report;
 
 import com.basic.util.DataBaseUtil;
 import org.apache.storm.task.OutputCollector;

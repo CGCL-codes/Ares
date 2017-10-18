@@ -1,4 +1,4 @@
-package com.basic.benchmark;
+package com.basic.benchmark.spout;
 
 import org.apache.storm.kafka.KafkaSpout;
 import org.apache.storm.kafka.SpoutConfig;

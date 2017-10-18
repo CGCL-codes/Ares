@@ -130,7 +130,7 @@ public class InitParaUtils {
 
         for(String compentId:topology.getComponents().keySet()){
             Component component = topology.getComponents().get(compentId);
-            int layer=AresUtils.getLayer(topology,component);
+            int layer= AresUtils.getLayer(topology,component);
             List<String> parentsId = component.parents;
             double upComponetExces = 0.0;
             for (String parentId : parentsId) {

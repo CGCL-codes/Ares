@@ -3,8 +3,6 @@ package com.basic.core.util;
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.Component;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.*;
 
 /**
@@ -12,7 +10,6 @@ import java.util.*;
  * Created by 79875 on 2017/10/4.
  */
 public class AresUtils {
-
     public static List<WorkerSlot> getAllSlots(Cluster cluster){
         List<WorkerSlot> slots = new ArrayList<WorkerSlot>();
         for (SupervisorDetails supervisor :cluster.getSupervisors().values()) {
@@ -173,18 +170,5 @@ public class AresUtils {
             if(endTime-startTime>delayTime)
                 break;
         }
-    }
-
-    public static boolean isSlowDown(){
-        String filepath="/home/tj/softwares/apache-storm-1.0.2/conf/slowdown";
-        BufferedReader bufferedReader= null;
-        boolean isSlowDown = false;
-        try {
-            bufferedReader = new BufferedReader(new FileReader(filepath));
-            isSlowDown = Boolean.valueOf(bufferedReader.readLine());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return isSlowDown;
     }
 }

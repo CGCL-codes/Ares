@@ -60,7 +60,9 @@
             </filter>
             <filter>
               <artifact>*:*</artifact>
-              <excludes />
+              <excludes>
+                <exclude>com/basic/core/**</exclude>
+              </excludes>
             </filter>
           </filters>
         </configuration>
