@@ -19,20 +19,22 @@ package com.basic.benchmark;
 
 import com.basic.benchmark.bolt.JoinBolt;
 import com.basic.benchmark.bolt.PrinterBolt;
+import com.basic.benchmark.spout.AgeSpout;
+import com.basic.benchmark.spout.GenderSpout;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
-import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 
 import java.util.concurrent.TimeUnit;
+
+import static com.basic.benchmark.Constants.*;
 
 /**
  * Created by 79875 on 2017/10/18.
@@ -48,27 +50,24 @@ public class JoinBoltTopology {
         Integer joinboltparallelism=Integer.valueOf(args[4]);
         Integer printerboltparallelism=Integer.valueOf(args[5]);
 
-        FeederSpout genderSpout = new FeederSpout(new Fields("id", "gender"));
-        FeederSpout ageSpout = new FeederSpout(new Fields("id", "age"));
+        GenderSpout genderSpout = new GenderSpout();
+        AgeSpout ageSpout = new AgeSpout();
 
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("genderSpout", genderSpout,genderspoutparallelism);
-        builder.setSpout("ageSpout", ageSpout,agespoutparallelism);
+        builder.setSpout(GENDER_SPOUT_ID, genderSpout,genderspoutparallelism);
+        builder.setSpout(AGE_SPOUT_ID, ageSpout,agespoutparallelism);
 
         // inner join of 'age' and 'gender' records on 'id' field
-        JoinBolt joiner = new JoinBolt("genderSpout", "id")
-                .join("ageSpout",    "id", "genderSpout")
-                .select ("genderSpout:id,ageSpout:id,gender,age")
+        JoinBolt joiner = new JoinBolt(GENDER_SPOUT_ID, "id")
+                .join(AGE_SPOUT_ID,"id", GENDER_SPOUT_ID)
+                .select ("gender-spout:id,age-spout:id,gender,age")
                 .withTumblingWindow( new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS) );
 
-        builder.setBolt("joiner", joiner,joinboltparallelism)
-                .fieldsGrouping("genderSpout", new Fields("id"))
-                .fieldsGrouping("ageSpout", new Fields("id"))         ;
+        builder.setBolt(JOIN_BLOT_ID, joiner,joinboltparallelism)
+                .fieldsGrouping(GENDER_SPOUT_ID,GENDER_STREAMID, new Fields("id"))
+                .fieldsGrouping(AGE_SPOUT_ID,AGE_STREAMID, new Fields("id"))         ;
 
-        builder.setBolt("printer", new PrinterBolt(),printerboltparallelism).shuffleGrouping("joiner");
-        generateGenderData(genderSpout);
-
-        generateAgeData(ageSpout);
+        builder.setBolt(PRINT_BOLT_ID, new PrinterBolt(),printerboltparallelism).shuffleGrouping(JOIN_BLOT_ID);
 
         //Topology配置
         Config config=new Config();
@@ -83,25 +82,6 @@ public class JoinBoltTopology {
             localCluster.shutdown();
         }else {
             StormSubmitter.submitTopologyWithProgressBar(args[0],config,builder.createTopology());
-        }
-    }
-
-    private static void generateAgeData(FeederSpout ageSpout) {
-        for (int i = 9; i >= 0; i--) {
-            ageSpout.feed(new Values(i, i + 20));
-        }
-    }
-
-    private static void generateGenderData(FeederSpout genderSpout) {
-        for (int i = 0; i < 10; i++) {
-            String gender;
-            if (i % 2 == 0) {
-                gender = "male";
-            }
-            else {
-                gender = "female";
-            }
-            genderSpout.feed(new Values(i, gender));
         }
     }
 }

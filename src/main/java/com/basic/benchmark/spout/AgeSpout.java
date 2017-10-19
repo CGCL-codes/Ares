@@ -10,17 +10,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.basic.benchmark.Constants.GENDER_STREAMID;
+import static com.basic.benchmark.Constants.AGE_STREAMID;
 
 /**
  * locate com.basic.benchmark.spout
  * Created by 79875 on 2017/10/18.
  */
-public class GenderSpout extends BaseRichSpout {
-    private static Logger logger= LoggerFactory.getLogger(GenderSpout.class);
+public class AgeSpout extends BaseRichSpout {
+    private static Logger logger= LoggerFactory.getLogger(AgeSpout.class);
     private SpoutOutputCollector outputCollector;
     ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
 
@@ -35,17 +36,13 @@ public class GenderSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         id++;
-        String gender="";
-        if(Math.random()<0.5)
-            gender="famale";
-        else gender="male";
-
+        Random random=new Random();
         //Storm 的消息ack机制
-        Values value = new Values(id,gender);
+        Values value = new Values(id,random.nextInt(20)+1);
         UUID uuid=UUID.randomUUID();
         pending.put(uuid,value);
 
-        outputCollector.emit(GENDER_STREAMID,value,uuid);
+        outputCollector.emit(AGE_STREAMID,value,uuid);
     }
 
     @Override
@@ -55,11 +52,11 @@ public class GenderSpout extends BaseRichSpout {
 
     @Override
     public void fail(Object msgId) {
-        outputCollector.emit(GENDER_STREAMID,pending.get(msgId),msgId);
+        outputCollector.emit(AGE_STREAMID,pending.get(msgId),msgId);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(GENDER_STREAMID,new Fields("id","gender"));
+        declarer.declareStream(AGE_STREAMID,new Fields("id","age"));
     }
 }
