@@ -17,21 +17,68 @@
  */
 package com.basic.benchmark.bolt;
 
+import com.basic.util.FileUtil;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Tuple;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Map;
+
 
 public class PrinterBolt extends BaseBasicBolt {
+  private int taskid;
+  private BufferedOutputStream genderbufferedOutputStream;
+  private BufferedOutputStream agebufferedOutputStream;
 
   @Override
   public void execute(Tuple tuple, BasicOutputCollector collector) {
-    System.out.println(tuple);
+    Long genderstartTime = tuple.getLongByField("gendertimeinfo");
+    Long agestartTime = tuple.getLongByField("agetimeinfo");
+    Long endTime=System.currentTimeMillis();
+    String genderdelayTime=(endTime-genderstartTime)+"\t"+endTime+"\n";
+    String agedelayTime=(endTime-agestartTime)+"\t"+endTime+"\n";
+    try {
+      genderbufferedOutputStream.write(genderdelayTime.getBytes("UTF-8"));
+      agebufferedOutputStream.write(agedelayTime.getBytes("UTF-8"));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Override
+  public void prepare(Map stormConf, TopologyContext context) {
+    this.taskid=context.getThisTaskId();
+    String genderfileName="/root/TJ/aresbench/genderlatency-"+taskid;
+    String agefileName="/root/TJ/aresbench/agelatency-"+taskid;
+    try {
+      File genderfile = new File(genderfileName);
+      File agefile = new File(agefileName);
+      FileUtil.createFile(genderfile);
+      FileUtil.createFile(agefile);
+      genderbufferedOutputStream= new BufferedOutputStream(new FileOutputStream(genderfile,true)) ;
+      agebufferedOutputStream= new BufferedOutputStream(new FileOutputStream(agefile,true)) ;
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
   public void declareOutputFields(OutputFieldsDeclarer ofd) {
   }
 
+  @Override
+  public void cleanup() {
+    try {
+      genderbufferedOutputStream.close();
+      agebufferedOutputStream.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 }

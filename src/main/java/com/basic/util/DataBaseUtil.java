@@ -12,60 +12,45 @@ import java.sql.*;
 public class DataBaseUtil {
 
     private static Logger logger= LoggerFactory.getLogger(DataBaseUtil.class);
-    public static final String jdbcUrl="jdbc:mysql://192.168.223.202:3306/aresbenchmark";
-    public static final String username="root";
-    public static final String passwrod="123456";
-
-    static{
-        getConnection();//获得数据库连接
-    }
-
-    //public static Logger logger= LoggerFactory.getLogger(DataBaseUtil.class);
+    private static JdbcPool jdbcPool=new JdbcPool();
 
     // 创建静态全局变量
     public static Connection conn;//创建用于连接数据库的Connection对象
 
-    /* 获取数据库连接的函数*/
-    public static Connection getConnection() {
-        try {
-            Class.forName("com.mysql.jdbc.Driver");// 加载Mysql数据驱动
-
-            conn = DriverManager.getConnection(
-                    jdbcUrl , username , passwrod);// 创建数据连接
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("数据库连接失败" + e.getMessage());
+    /**
+     * 释放数据库连接池
+     * @param conn
+     * @param st
+     * @param rs
+     */
+    public static void release(Connection conn,Statement st,ResultSet rs){
+        if(rs!=null){
+            try{
+                //关闭存储查询结果的ResultSet对象
+                rs.close();
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            rs = null;
         }
-        return conn; //返回所建立的数据库连接
-    }
+        if(st!=null){
+            try{
+                //关闭负责执行SQL命令的Statement对象
+                st.close();
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-    //插入表测试代码
-//    public static void insert(String word, Long value) {
-//
-//        Calendar Cld = Calendar.getInstance();
-//        int millisecond = Cld.get(Calendar.MILLISECOND);
-//        long systemTimeMillis=System.currentTimeMillis();
-//        //这就是距离1970年1月1日0点0分0秒的毫秒数
-//
-//        try {
-//            String sql = "INSERT INTO wordcount(word,count,millisecond,systemtime)"
-//                    + " VALUES ('"+word+"','"+value+"','"+millisecond+"','"+systemTimeMillis+"')";  // 插入数据的sql语句
-//
-//            //REPLACE :如果插入的记录与表中原有的记录不重复，则执行INSERT操作，影响的记录数为1；
-//            // 如果插入的记录与表中原有的记录重复，则先DELETE原有记录，再执行INSERT，影响的记录数为2。
-//
-//
-//            st = (Statement) conn.createStatement();    // 创建用于执行静态sql语句的Statement对象
-//
-//            int count = st.executeUpdate(sql);  // 执行插入操作的sql语句，并返回插入数据的个数
-//
-//            System.out.println("向words表中插入 " + count + " 条数据"); //输出插入操作的处理结果
-//
-//        } catch (SQLException e) {
-//            System.out.println("插入数据失败" + e.getMessage());
-//        }
-//    }
+        if(conn!=null){
+            try{
+                //关闭Connection数据库连接对象
+                JdbcPool.listConnections.add(conn);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     /**
      * 插入数据到tupleCount表中
@@ -74,6 +59,7 @@ public class DataBaseUtil {
      */
     public static void insertTupleCount(Timestamp time,Long tuplecount){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_tuplecount(time,tuplecount)"
                     + " VALUES (?,?)";  // 插入数据的sql语句
@@ -83,6 +69,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_tuplecount (time,tuplecount) values"+time+" "+tuplecount);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -95,6 +82,7 @@ public class DataBaseUtil {
      */
     public static void insertHdfsByteCount(Timestamp time,Long bytecount){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_hdfsbytecount(time,bytecount)"
                     + " VALUES (?,?)";  // 插入数据的sql语句
@@ -104,6 +92,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_hdfsbytecount (time,bytecount) values"+time+" "+bytecount);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -116,6 +105,7 @@ public class DataBaseUtil {
      */
     public static void insertTupleLatency(Timestamp time,Long latency){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_tuplelatency(time,tuplelatency)"
                     + " VALUES (?,?)";  // 插入数据的sql语句
@@ -125,6 +115,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_tuplelatency (time,tuplecount) values"+time+" "+latency);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -138,6 +129,7 @@ public class DataBaseUtil {
      */
     public static void insertAresWordCount(Timestamp time,String word,Long count,Integer number){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_areswordcount(time,word,count,number)"
                     + " VALUES (?,?,?,?)";  // 插入数据的sql语句
@@ -149,6 +141,7 @@ public class DataBaseUtil {
             int num = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_wordcount (time,word,count) values"+time+" "+word+" "+count);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -161,6 +154,7 @@ public class DataBaseUtil {
      */
     public static void insertAresTupleCount(Timestamp time,Long tuplecount,int taskid){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_arestuplecount(time,tuplecount,taskid)"
                     + " VALUES (?,?,?)";  // 插入数据的sql语句
@@ -171,6 +165,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_tuplecount (time,tuplecount) values"+time+" "+tuplecount);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -183,6 +178,7 @@ public class DataBaseUtil {
      */
     public static void insertAresSpoutCount(Timestamp time,Long tuplecount,int taskid){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_aresspoutcount(time,tuplecount,taskid)"
                     + " VALUES (?,?,?)";  // 插入数据的sql语句
@@ -193,6 +189,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -200,6 +197,7 @@ public class DataBaseUtil {
 
     public static void insertDefaultSpoutCount(Timestamp time,Long tuplecount,int taskid){
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_defaultspoutcount(time,tuplecount,taskid)"
                     + " VALUES (?,?,?)";  // 插入数据的sql语句
@@ -210,6 +208,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
@@ -222,6 +221,7 @@ public class DataBaseUtil {
      */
     public static void insertAresSpoutLatency(Timestamp timestamp, Long latencytime, int taskid) {
         try {
+            conn=jdbcPool.getConnection();
             PreparedStatement preparedStatement;
             String sql = "INSERT INTO t_aresspoutlatency(time,latencytime,taskid)"
                     + " VALUES (?,?,?)";  // 插入数据的sql语句
@@ -232,14 +232,10 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
+            release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }
     }
-
-    public static void closeconnection() throws SQLException {
-        conn.close();
-    }
-
 
 }

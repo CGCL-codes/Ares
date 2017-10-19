@@ -41,7 +41,7 @@ public class GenderSpout extends BaseRichSpout {
         else gender="male";
 
         //Storm 的消息ack机制
-        Values value = new Values(id,gender);
+        Values value = new Values(id,gender,System.currentTimeMillis());
         UUID uuid=UUID.randomUUID();
         pending.put(uuid,value);
 
@@ -60,6 +60,6 @@ public class GenderSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(GENDER_STREAMID,new Fields("id","gender"));
+        declarer.declareStream(GENDER_STREAMID,new Fields("id","gender","gendertimeinfo"));
     }
 }

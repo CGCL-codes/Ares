@@ -38,7 +38,7 @@ import static com.basic.benchmark.Constants.*;
 
 /**
  * Created by 79875 on 2017/10/18.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.JoinBoltTopology jointopology 3 1 1 1 1
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.JoinBoltTopology jointopology 3 1 1 9 1
  */
 public class JoinBoltTopology {
     private static final String TOPOLOGY_NAME= "join-topology";
@@ -60,7 +60,7 @@ public class JoinBoltTopology {
         // inner join of 'age' and 'gender' records on 'id' field
         JoinBolt joiner = new JoinBolt(GENDER_SPOUT_ID, "id")
                 .join(AGE_SPOUT_ID,"id", GENDER_SPOUT_ID)
-                .select ("gender-spout:id,age-spout:id,gender,age")
+                .select ("gender-spout:id,age-spout:id,gender,age,gendertimeinfo,agetimeinfo")
                 .withTumblingWindow( new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS) );
 
         builder.setBolt(JOIN_BLOT_ID, joiner,joinboltparallelism)

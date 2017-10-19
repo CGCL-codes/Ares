@@ -38,7 +38,7 @@ public class AgeSpout extends BaseRichSpout {
         id++;
         Random random=new Random();
         //Storm 的消息ack机制
-        Values value = new Values(id,random.nextInt(20)+1);
+        Values value = new Values(id,random.nextInt(20)+1,System.currentTimeMillis());
         UUID uuid=UUID.randomUUID();
         pending.put(uuid,value);
 
@@ -57,6 +57,6 @@ public class AgeSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(AGE_STREAMID,new Fields("id","age"));
+        declarer.declareStream(AGE_STREAMID,new Fields("id","age","agetimeinfo"));
     }
 }
