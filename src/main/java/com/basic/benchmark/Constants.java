@@ -16,6 +16,8 @@ public class Constants {
     public static final String AGE_SPOUT_ID="age-spout";
     public static final String JOIN_BLOT_ID="join-bolt";
     public static final String PRINT_BOLT_ID="print-bolt";
+    public static final String LINTEITEM_SPOUT_ID="lineitem-spout";
+    public static final String ORDERS_SPOUT_ID="orders-spout";
 
     public static final String WORDCOUNT_STREAM_ID="wordcountstream";
     public static final String ACKCOUNT_STREAM_ID="ackcountstream";

@@ -1,4 +1,4 @@
-package com.basic.benchmark.schedule;
+package com.basic.core.scheduler;
 
 import com.basic.core.util.AresUtils;
 import com.basic.core.util.ComputeCostUtil;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * locate com.basic.benchmark.schedule
+ * locate com.basic.core.scheduler
  * Created by 79875 on 2017/10/17.
  */
 public class ResourceAwareTempScheduler implements IScheduler {
