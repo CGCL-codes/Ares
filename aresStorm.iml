@@ -50,5 +50,6 @@
     <orderEntry type="library" name="Maven: net.sf.jopt-simple:jopt-simple:3.2" level="project" />
     <orderEntry type="library" name="Maven: com.101tec:zkclient:0.3" level="project" />
     <orderEntry type="library" name="Maven: com.google.collections:google-collections:1.0" level="project" />
+    <orderEntry type="library" name="Maven: c3p0:c3p0:0.9.1.2" level="project" />
   </component>
 </module>
