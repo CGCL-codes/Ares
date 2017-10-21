@@ -32,7 +32,6 @@ public class JoinBolt extends BaseWindowedBolt {
     public enum Selector { STREAM, SOURCE }
     protected final Selector selectorType;
 
-
     /**
      * Calls  JoinBolt(Selector.SOURCE, sourceId, fieldName)
      * @param sourceId   Id of source component (spout/bolt) from which this bolt is receiving data

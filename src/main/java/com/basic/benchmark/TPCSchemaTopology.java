@@ -40,7 +40,7 @@ public class TPCSchemaTopology {
 
         // inner join of 'age' and 'gender' records on 'id' field
         JoinBolt joiner = new JoinBolt(LINTEITEM_SPOUT_ID, "ORDERKEY")
-                .join(ORDERS_SPOUT_ID,"ORDERKEY", LINTEITEM_SPOUT_ID)
+                .leftJoin(ORDERS_SPOUT_ID,"ORDERKEY", LINTEITEM_SPOUT_ID)
                 .select ("lineitem:ORDERKEY,PARTKEY,SUPPKEY,LINENUMBER,CUSTKEY,ORDERSTATUS,TOTALPRICE,CLERK,lineitemtimeinfo,orderstimeinfo")
                 .withTumblingWindow( new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS) );
 

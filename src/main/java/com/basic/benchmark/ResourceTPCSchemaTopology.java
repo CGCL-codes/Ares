@@ -40,13 +40,13 @@ public class ResourceTPCSchemaTopology {
         SpoutDeclarer lineitemSpoutDeclarer = builder.setSpout(LINTEITEM_SPOUT_ID, lineItemSpout, genderspoutparallelism);
         SpoutDeclarer OrdersSpoutDeclarer1 = builder.setSpout(ORDERS_SPOUT_ID, ordersSPout, agespoutparallelism);
         lineitemSpoutDeclarer.setCPULoad(100);
-        lineitemSpoutDeclarer.setMemoryLoad(760,300);
-        OrdersSpoutDeclarer1.setMemoryLoad(760,300);
+        lineitemSpoutDeclarer.setMemoryLoad(1024);
+        OrdersSpoutDeclarer1.setMemoryLoad(1024);
         OrdersSpoutDeclarer1.setCPULoad(100);
 
         // inner join of 'age' and 'gender' records on 'id' field
         JoinBolt joiner = new JoinBolt(LINTEITEM_SPOUT_ID, "ORDERKEY")
-                .join(ORDERS_SPOUT_ID,"ORDERKEY", LINTEITEM_SPOUT_ID)
+                .leftJoin(ORDERS_SPOUT_ID,"ORDERKEY", LINTEITEM_SPOUT_ID)
                 .select ("lineitem:ORDERKEY,PARTKEY,SUPPKEY,LINENUMBER,CUSTKEY,ORDERSTATUS,TOTALPRICE,CLERK,lineitemtimeinfo,orderstimeinfo")
                 .withTumblingWindow( new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS) );
 
@@ -58,9 +58,11 @@ public class ResourceTPCSchemaTopology {
         BoltDeclarer printBoltDeclarer = builder.setBolt(PRINT_BOLT_ID, new TPCSchemePrinterBolt(), printerboltparallelism).shuffleGrouping(JOIN_BLOT_ID);
         printBoltDeclarer.setCPULoad(100);
         printBoltDeclarer.setMemoryLoad(760);
+
         //Topology配置
         Config config=new Config();
-        config.setTopologyWorkerMaxHeapSize(2048);
+        config.setTopologyWorkerMaxHeapSize(4096);
+        config.setTopologyPriority(20);
         config.setNumWorkers(numworkers);//设置两个Worker进程 10
         //config.setNumAckers(0);//每个Work进程会运行一个Acker任务，这里将Ack任务设置为0 禁止Ack任务
         if(args[0].equals("local")){

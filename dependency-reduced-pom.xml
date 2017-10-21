@@ -61,7 +61,7 @@
             <filter>
               <artifact>*:*</artifact>
               <excludes>
-                <exclude>com/basic/core/**</exclude>
+                <exclude>com/basic/benchmark/**</exclude>
               </excludes>
             </filter>
           </filters>

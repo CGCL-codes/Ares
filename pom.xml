@@ -135,8 +135,8 @@
               <excludes>
                 <!--做单元测试需要 log4j的文件-->
                 <!--<exclude>org/apache/log4j/**</exclude>-->
-                <!--<exclude>com/basic/benchmark/**</exclude>-->
-                <exclude>com/basic/core/**</exclude>
+                <exclude>com/basic/benchmark/**</exclude>
+                <!--<exclude>com/basic/core/**</exclude>-->
               </excludes>
             </filter>
 

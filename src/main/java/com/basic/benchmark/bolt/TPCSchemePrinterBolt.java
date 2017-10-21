@@ -39,13 +39,13 @@ public class TPCSchemePrinterBolt extends BaseBasicBolt {
   @Override
   public void execute(Tuple tuple, BasicOutputCollector collector) {
     Long lineitemstartTime = tuple.getLongByField("lineitemtimeinfo");
-    Long ordersstartTime = tuple.getLongByField("orderstimeinfo");
+    //Long ordersstartTime = tuple.getLongByField("orderstimeinfo");
     Long endTime=System.currentTimeMillis();
     String lineitemdelayTime=(endTime-lineitemstartTime)+"\t"+endTime+"\n";
-    String ordersdelayTime=(endTime-ordersstartTime)+"\t"+endTime+"\n";
+    //String ordersdelayTime=(endTime-ordersstartTime)+"\t"+endTime+"\n";
     try {
       genderbufferedOutputStream.write(lineitemdelayTime.getBytes("UTF-8"));
-      agebufferedOutputStream.write(ordersdelayTime.getBytes("UTF-8"));
+     // agebufferedOutputStream.write(ordersdelayTime.getBytes("UTF-8"));
     } catch (IOException e) {
       e.printStackTrace();
     }
