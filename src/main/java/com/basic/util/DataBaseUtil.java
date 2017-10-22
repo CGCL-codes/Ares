@@ -203,4 +203,22 @@ public class DataBaseUtil {
         }
     }
 
+    public static void insertTemp(Long latencytime,Timestamp timestamp){
+        try {
+            conn=JdbcPool.getConnection();
+            PreparedStatement preparedStatement;
+            String sql = "INSERT INTO temp(time,latencytime)"
+                    + " VALUES (?,?)";  // 插入数据的sql语句
+            preparedStatement = conn.prepareStatement(sql);    // 创建用于执行静态sql语句的Statement对象
+            preparedStatement.setTimestamp(1,timestamp);
+            preparedStatement.setLong(2,latencytime);
+            int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
+            preparedStatement.close();
+            //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
+            JdbcPool.release(conn,preparedStatement,null);
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
 }

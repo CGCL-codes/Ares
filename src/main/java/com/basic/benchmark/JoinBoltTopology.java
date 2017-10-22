@@ -38,7 +38,7 @@ import static com.basic.benchmark.Constants.*;
 
 /**
  * Created by 79875 on 2017/10/18.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.JoinBoltTopology jointopology 3 1 1 9 1
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.JoinBoltTopology jointopology 9 1 1 9 1
  */
 public class JoinBoltTopology {
     private static final String TOPOLOGY_NAME= "join-topology";

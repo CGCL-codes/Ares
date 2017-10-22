@@ -1,6 +1,6 @@
 package com.basic.core.scheduler;
 
-import com.basic.core.util.AresUtils;
+import com.basic.util.AresUtils;
 import com.basic.core.util.ComputeCostUtil;
 import com.google.common.collect.Sets;
 import org.apache.storm.scheduler.*;
@@ -58,7 +58,7 @@ public class GameScheduler implements IScheduler {
          * 重新恢复Schedule
          */
         if(executors.size() != allExecutors.size()){
-            randomAssignment(assignment,ackExecutors,slots);
+            randomAssignment(assignment,executors,slots);
             return assignment;
         }
 
@@ -373,7 +373,6 @@ public class GameScheduler implements IScheduler {
 
     @Override
     public void prepare(Map conf) {
-
     }
 
     @Override

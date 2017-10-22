@@ -1,6 +1,6 @@
 package com.basic.benchmark.spout;
 
-import com.basic.core.util.AresUtils;
+import com.basic.util.AresUtils;
 import com.basic.util.TopologyUtil;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;

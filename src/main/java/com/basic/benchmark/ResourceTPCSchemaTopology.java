@@ -24,7 +24,7 @@ import static com.basic.benchmark.Constants.*;
 /**
  * locate com.basic.benchmark
  * Created by 79875 on 2017/10/20.
- * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceTPCSchemaTopology tpcSchematopology 3 1 1 9 1
+ * 提交stormtopology任务 storm jar aresStorm-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceTPCSchemaTopology tpcSchematopology 9 1 1 9 1
  */
 public class ResourceTPCSchemaTopology {
     public static void main(String[] args) throws InvalidTopologyException, AuthorizationException, AlreadyAliveException {

@@ -2,7 +2,6 @@ package com.basic.benchmark;
 
 
 import com.basic.benchmark.bolt.WordCounterBolt;
-import com.basic.benchmark.bolt.report.LatencyReportBolt;
 import com.basic.benchmark.bolt.report.SpouThroughputReportBolt;
 import com.basic.benchmark.spout.SentenceSpout;
 import org.apache.storm.Config;
@@ -31,7 +30,7 @@ public class SentenceWordCountTopology {
         Long waitTimeMills=Long.valueOf(args[6]);
         SentenceSpout spout=new SentenceSpout(waitTimeMills);
         WordCounterBolt wordCountBolt=new WordCounterBolt(waitTimeMills);
-        LatencyReportBolt latencyReportBolt=new LatencyReportBolt();
+//        LatencyReportBolt latencyReportBolt=new LatencyReportBolt();
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
         builder.setSpout(SENTENCE_SPOUT_ID,spout,spoutparallelism);
@@ -39,8 +38,8 @@ public class SentenceWordCountTopology {
                 .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
-        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,latencyReportBolt,latencyreportboltparallelism)
-                .shuffleGrouping(COUNT_BOLT_ID,LATENCYTIME_STREAM_ID);
+//        builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID,latencyReportBolt,latencyreportboltparallelism)
+//                .shuffleGrouping(COUNT_BOLT_ID,LATENCYTIME_STREAM_ID);
 
         //Topology配置
         Config config=new Config();

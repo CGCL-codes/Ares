@@ -3,6 +3,7 @@ package com.basic.core.util;
 
 import com.basic.core.model.ComponentPair;
 import com.basic.core.model.NodePair;
+import com.basic.util.AresUtils;
 import com.basic.util.PropertiesUtil;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.scheduler.Cluster;
@@ -24,7 +25,7 @@ public class InitParaUtils {
     private static final Logger LOG = LoggerFactory.getLogger(InitParaUtils.class);
     //The parameter W1 and W2 denote the weight of the stream` response time and the stream recovery time, respectively;
     // public static double W1, W2;
-    public static double W1 = 0.6, W2 = 0.4;
+    public static double W1 = 0.7, W2 = 0.8;
 
     //The parameter q denotes the computation cost for executors to process a single tuple.
     public static Map<String, Double> initializeQ(TopologyDetails topology) {

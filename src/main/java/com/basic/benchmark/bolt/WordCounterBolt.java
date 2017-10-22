@@ -32,15 +32,22 @@ public class WordCounterBolt extends BaseRichBolt {
     public WordCounterBolt(long waitTimeMills) {
         this.waitTimeMills = waitTimeMills;
     }
+    private boolean isperpare;
 
     @Override
     public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
         isSlowDown= TopologyUtil.isSlowDown();
         this.outputCollector=collector;
+        isperpare=true;
     }
 
     @Override
     public void execute(Tuple tuple) {
+        if(isperpare){
+            logger.info("currentTimeMills:"+System.currentTimeMillis());
+            isperpare=false;
+        }
+
         String word = tuple.getStringByField("word");
         Long startTimeMills=tuple.getLongByField("startTimeMills");
         if (!word.isEmpty()) {

@@ -1,6 +1,6 @@
 package com.basic.core;
 
-import com.basic.core.util.AresUtils;
+import com.basic.util.AresUtils;
 import org.junit.Test;
 
 import java.util.HashMap;

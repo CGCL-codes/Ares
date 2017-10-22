@@ -1,4 +1,4 @@
-package com.basic.core.util;
+package com.basic.util;
 
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.resource.Component;

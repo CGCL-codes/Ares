@@ -1,8 +1,7 @@
 package com.basic.benchmark;
 
-import com.basic.benchmark.bolt.report.LatencyReportBolt;
-import com.basic.benchmark.bolt.report.SpouThroughputReportBolt;
 import com.basic.benchmark.bolt.WordCounterBolt;
+import com.basic.benchmark.bolt.report.SpouThroughputReportBolt;
 import com.basic.benchmark.spout.SentenceSpout;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -36,7 +35,7 @@ public class ResourceWordCountTopology {
         Long waitTimeMills=Long.valueOf(args[5]);
         SentenceSpout spout=new SentenceSpout(waitTimeMills);
         WordCounterBolt wordCountBolt=new WordCounterBolt(waitTimeMills);
-        LatencyReportBolt latencyReportBolt =new LatencyReportBolt();
+        //LatencyReportBolt latencyReportBolt =new LatencyReportBolt();
         SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
 
         SpoutDeclarer spoutDeclarer = builder.setSpout(SENTENCE_SPOUT_ID, spout, spoutparallelism);
@@ -44,8 +43,8 @@ public class ResourceWordCountTopology {
                 .fieldsGrouping(SENTENCE_SPOUT_ID, WORDCOUNT_STREAM_ID, new Fields("word"));
         BoltDeclarer throughputBoltDeclarer = builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID, spouThroughputReportBolt)
                 .allGrouping(SENTENCE_SPOUT_ID, ACKCOUNT_STREAM_ID);
-        BoltDeclarer latencyBoltDeclarer1 = builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID, latencyReportBolt)
-                .allGrouping(SENTENCE_SPOUT_ID, LATENCYTIME_STREAM_ID);
+//        BoltDeclarer latencyBoltDeclarer1 = builder.setBolt(SPOUT_LATENCYREPORT_BOLT_ID, latencyReportBolt)
+//                .allGrouping(SENTENCE_SPOUT_ID, LATENCYTIME_STREAM_ID);
 
         spoutDeclarer.setCPULoad(20);
         wordCDeclarer.setCPULoad(40);
