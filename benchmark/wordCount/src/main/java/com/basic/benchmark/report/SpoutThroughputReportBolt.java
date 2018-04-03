@@ -40,7 +40,6 @@ public class SpoutThroughputReportBolt extends BaseRichBolt {
             Long currentTimeMills = tuple.getLongByField("timeinfo");
             Long tupplecount = tuple.getLongByField("tuplecount");
             int taskid = tuple.getIntegerByField("taskid");
-
             //将最后结果插入到数据库中
             Timestamp timestamp = new Timestamp(currentTimeMills);
             if(isGameSchedule)

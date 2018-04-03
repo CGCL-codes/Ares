@@ -81,6 +81,7 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${storm.kafka.client.version}</version>
+
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

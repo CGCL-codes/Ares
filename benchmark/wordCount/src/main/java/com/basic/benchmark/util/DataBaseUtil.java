@@ -62,7 +62,6 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
-            conn.commit();
             //JdbcPool.release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
@@ -82,7 +81,6 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
-            conn.commit();
             //JdbcPool.release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
@@ -107,7 +105,6 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
-            conn.commit();
             //JdbcPool.release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
@@ -133,8 +130,7 @@ public class DataBaseUtil {
             int count = preparedStatement.executeUpdate();  // 执行插入操作的sql语句，并返回插入数据的个数
             preparedStatement.close();
             //logger.info("insert into t_spouttuplecount (time,tuplecount) values"+time+" "+tuplecount);
-            conn.commit();
-            //JdbcPool.release(conn,preparedStatement,null);
+           // JdbcPool.release(conn,preparedStatement,null);
         }catch (SQLException e){
             e.printStackTrace();
         }

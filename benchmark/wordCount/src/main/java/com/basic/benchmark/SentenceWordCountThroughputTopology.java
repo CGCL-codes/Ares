@@ -35,7 +35,7 @@ public class SentenceWordCountThroughputTopology {
         builder.setBolt(COUNT_BOLT_ID,wordCountBolt,wordcountboltparallelism)
                 .fieldsGrouping(SENTENCE_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
         builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID, spoutThroughputReportBolt)
-                .allGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
+                .shuffleGrouping(SENTENCE_SPOUT_ID,ACKCOUNT_STREAM_ID);
 
         //Topology配置
         Config config=new Config();
