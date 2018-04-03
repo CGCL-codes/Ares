@@ -7,12 +7,18 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="ares" />
-        <module name="aresStorm" />
+        <module name="ares-core" />
+        <module name="TPCJoinSchema" />
+        <module name="wordCount" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="ares" target="1.7" />
-      <module name="aresStorm" target="1.7" />
+      <module name="ares-core" target="1.8" />
+      <module name="aresStorm" target="1.8" />
+      <module name="TPCJoinSchema" target="1.8" />
+      <module name="wordCount" target="1.8" />
+      <module name="wordCountBenchMark" target="1.7" />
     </bytecodeTargetLevel>
   </component>
 </project>
