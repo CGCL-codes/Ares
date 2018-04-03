@@ -1,6 +1,7 @@
 package com.basic.benchmark.spout;
 
-import com.basic.benchmark.bench.ThroughputSpout;
+
+import com.basic.benchmark.bench.LatecnySpout;
 import com.basic.benchmark.util.TimeUtils;
 import com.basic.benchmark.util.TopologyUtil;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -14,19 +15,18 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.basic.benchmark.Constants.WORDCOUNT_STREAM_ID;
-
 /**
- * Created by dello on 2016/10/15.
+ * locate com.basic.benchmark
+ * Created by 79875 on 2017/10/17.
  */
-public class SentenceSpout extends ThroughputSpout {
+public class SentenceLatencySpout extends LatecnySpout {
+    private static Logger logger= LoggerFactory.getLogger(SentenceThroughputSpout.class);
 
-    private static Logger logger= LoggerFactory.getLogger(SentenceSpout.class);
-
+    private static final String WORDCOUNT_STREAM_ID="wordcountstream";
     private boolean isSlowDown;
     private long waitTimeMills;
 
-    public SentenceSpout(long waitTimeMills) {
+    public SentenceLatencySpout(long waitTimeMills) {
         this.waitTimeMills = waitTimeMills;
     }
 
@@ -41,7 +41,7 @@ public class SentenceSpout extends ThroughputSpout {
 
     //初始化操作
     public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
-        logger.info("------------SentenceSpout open------------");
+        logger.info("------------SentenceThroughputSpout open------------");
         super.open(map,topologyContext,spoutOutputCollector);
         isSlowDown= TopologyUtil.isSlowDown();
     }
@@ -54,6 +54,7 @@ public class SentenceSpout extends ThroughputSpout {
 
     //核心逻辑
     public void nextTuple() {
+        super.nextTuple();
         if(isSlowDown){
             TimeUtils.waitForTimeMills(waitTimeMills);
         }
@@ -63,7 +64,9 @@ public class SentenceSpout extends ThroughputSpout {
         Values value = new Values(word,System.currentTimeMillis());
         UUID uuid=UUID.randomUUID();
         pending.put(uuid,value);
-        outputCollector.emit(WORDCOUNT_STREAM_ID,value,uuid);
+        latencyHashMap.put(uuid,System.currentTimeMillis());
+
+        spoutOutputCollector.emit(WORDCOUNT_STREAM_ID,value,uuid);
     }
 
     //Storm 的消息ack机制
@@ -81,3 +84,4 @@ public class SentenceSpout extends ThroughputSpout {
     public void close() {
     }
 }
+

@@ -17,12 +17,12 @@ import java.util.Map;
  * Created by 79875 on 2017/3/7.
  * 用来统计输出Spout输入源的吞吐量的Bolt
  */
-public class SpouThroughputReportBolt extends BaseRichBolt {
-    private static Logger logger= LoggerFactory.getLogger(SpouThroughputReportBolt.class);
+public class SpoutThroughputReportBolt extends BaseRichBolt {
+    private static Logger logger= LoggerFactory.getLogger(SpoutThroughputReportBolt.class);
 
     private boolean isGameSchedule;
 
-    public SpouThroughputReportBolt(boolean isGameSchedule) {
+    public SpoutThroughputReportBolt(boolean isGameSchedule) {
         this.isGameSchedule = isGameSchedule;
     }
 
@@ -32,7 +32,7 @@ public class SpouThroughputReportBolt extends BaseRichBolt {
 
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.outputCollector=outputCollector;
-        logger.info("------------SpouThroughputReportBolt prepare------------");
+        logger.info("------------SpoutThroughputReportBolt prepare------------");
     }
 
     public void execute(Tuple tuple) {

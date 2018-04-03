@@ -1,6 +1,6 @@
 package com.basic.benchmark;
 
-import com.basic.benchmark.report.SpouThroughputReportBolt;
+import com.basic.benchmark.report.SpoutThroughputReportBolt;
 import com.basic.benchmark.spout.WordCountKafkaSpout;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -50,14 +50,14 @@ public class KafkaWordCountTopology {
         WordCountKafkaSpout kafkaSpout=new WordCountKafkaSpout(spoutConf);
 
         Boolean isGameSchedule=Boolean.valueOf(args[5]);
-        SpouThroughputReportBolt spouThroughputReportBolt=new SpouThroughputReportBolt(isGameSchedule);
+        SpoutThroughputReportBolt spoutThroughputReportBolt =new SpoutThroughputReportBolt(isGameSchedule);
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(KAFKA_SPOUT_ID, kafkaSpout, spoutparallelism);
-        builder.setBolt(COUNT_BOLT_ID, new WordCounterBolt(waitTimeMills), countboltparallelism)
+        builder.setBolt(COUNT_BOLT_ID, new WordCountBolt(waitTimeMills), countboltparallelism)
                 .fieldsGrouping(KAFKA_SPOUT_ID,WORDCOUNT_STREAM_ID,new Fields("word"));
                 //.shuffleGrouping(KAFKA_SPOUT_ID);
-        builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID,spouThroughputReportBolt)
+        builder.setBolt(SPOUT_THROUGHPUTREPORT_BOLT_ID, spoutThroughputReportBolt)
                 .allGrouping(KAFKA_SPOUT_ID,ACKCOUNT_STREAM_ID);
 
         Config config = new Config();

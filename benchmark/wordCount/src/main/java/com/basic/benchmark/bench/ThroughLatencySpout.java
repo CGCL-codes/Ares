@@ -19,8 +19,8 @@ public class ThroughLatencySpout extends BaseRichSpout {
     private static final String ACKCOUNT_STREAM_ID="ackcountstream";
     private static final String LATENCYTIME_STREAM_ID="latencytimestream";
     protected SpoutOutputCollector outputCollector;
-    ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
-    ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
+    protected ConcurrentHashMap<UUID,Values> pending; //用来记录tuple的msgID，和tuple
+    protected ConcurrentHashMap<UUID,Long> latencyHashMap; //用来统计tuple的延迟信息的HashMap
 
     private int thisTaskId =0;
     private long ackcount=0; //记录单位时间ACK的元组数量

@@ -25,7 +25,7 @@ public class InsertAresSpoutLatencyStrTask implements Runnable {
     public void run() {
         for(String latencyTime :latencyTimeStr.split(",")){
             if(!latencyTime.equals("")){
-                DataBaseUtil.insertAresSpoutLatency(timestamp, Long.valueOf(latencyTime), taskid);
+                DataBaseUtil.insertAresSpoutLatency(timestamp, Double.valueOf(latencyTime), taskid);
             }
         }
     }
