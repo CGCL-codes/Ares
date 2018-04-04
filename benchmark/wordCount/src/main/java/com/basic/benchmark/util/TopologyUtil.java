@@ -9,7 +9,7 @@ import java.io.FileReader;
  */
 public class TopologyUtil {
     public static boolean isSlowDown(){
-        String filepath="/home/TJ/AresWorkSpace/slowdown";
+        String filepath="/storm/apache-storm-1.2.1/slowdown";
         BufferedReader bufferedReader= null;
         boolean isSlowDown = false;
         try {

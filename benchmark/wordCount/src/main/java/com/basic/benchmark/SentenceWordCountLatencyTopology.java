@@ -13,7 +13,7 @@ import static com.basic.benchmark.Constants.*;
 
 /**
  * Created by 79875 on 2017/3/7.
- * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountLatencyTopology stormwordcount 7 7 7 7 false 60
+ * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountLatencyTopology stormwordcount 30 1 30 10 false 60
  */
 public class SentenceWordCountLatencyTopology {
 
