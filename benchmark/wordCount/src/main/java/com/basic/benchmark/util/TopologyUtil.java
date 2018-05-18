@@ -1,5 +1,7 @@
 package com.basic.benchmark.util;
 
+import com.basic.benchmark.Constants;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 
@@ -9,7 +11,7 @@ import java.io.FileReader;
  */
 public class TopologyUtil {
     public static boolean isSlowDown(){
-        String filepath="/storm/apache-storm-1.2.1/slowdown";
+        String filepath= Constants.isSlowDown;
         BufferedReader bufferedReader= null;
         boolean isSlowDown = false;
         try {

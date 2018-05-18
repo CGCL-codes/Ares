@@ -140,7 +140,7 @@ public class GameScheduler implements IScheduler {
                     WorkerSlot preAssignmentWorkSlot = assignment.get(executor);
 
                     //Initialize the costs of assigning an executor to different slots.
-                    LOG.info("compentId\texecutorId\thost\tport\ttotalCost\tcomputeCost\ttransferringCost\trecoveryCost");
+                    //LOG.info("compentId\texecutorId\thost\tport\ttotalCost\tcomputeCost\ttransferringCost\trecoveryCost");
                     Map<WorkerSlot, Double> costExecutorToSlot = new HashMap<WorkerSlot, Double>();
                     for (WorkerSlot slot : slots) {
                         double totalcost=0.0;
@@ -149,7 +149,7 @@ public class GameScheduler implements IScheduler {
                         double recoveryCost=0.0;
 
                         computeCost = computeCostUtil.computeProcessingCost(executor,slot);
-//                       LOG.info(computeCostUtil.totalProcessingCostOfExecutorsOnSlot.get(slot)+" "+computeCostUtil.computeProcessingCost(executor,slot));
+
                         for(ExecutorDetails upExecutor : upstreamExecutors) {
                             WorkerSlot upSlot=assignment.get(upExecutor);
                             transferringCost += computeCostUtil.computeTransferringCost(upExecutor,executor,upSlot,slot)/2;
@@ -167,7 +167,7 @@ public class GameScheduler implements IScheduler {
                         }
                         totalcost= transferringCost + recoveryCost +computeCost;
                         costExecutorToSlot.put(slot,totalcost);
-                        LOG.info(topology.getExecutorToComponent().get(executor)+"\t"+executor.getStartTask()+"\t"+cluster.getHost(slot.getNodeId())+"\t"+slot.getPort()+"\t"+totalcost+"\t"+computeCost+"\t"+transferringCost+"\t"+recoveryCost);
+                        //LOG.info(topology.getExecutorToComponent().get(executor)+"\t"+executor.getStartTask()+"\t"+cluster.getHost(slot.getNodeId())+"\t"+slot.getPort()+"\t"+totalcost+"\t"+computeCost+"\t"+transferringCost+"\t"+recoveryCost);
                     }
 
                     //Make the best-response strategy for an executor.
@@ -179,8 +179,8 @@ public class GameScheduler implements IScheduler {
                             assignment.put(executor, slot);
                         }
                     }
-                    LOG.info("compentId\texecutorId\tprehost\tnowhost\tnowoort");
-                    LOG.info(topology.getExecutorToComponent().get(executor)+"\t"+executor.getStartTask()+"\t"+cluster.getHost(preAssignmentWorkSlot.getNodeId())+"\t"+preAssignmentWorkSlot.getPort()+"\t"+cluster.getHost(assignment.get(executor).getNodeId())+"\t"+assignment.get(executor).getPort());
+                    //LOG.info("compentId\texecutorId\tprehost\tnowhost\tnowoort");
+                    //LOG.info(topology.getExecutorToComponent().get(executor)+"\t"+executor.getStartTask()+"\t"+cluster.getHost(preAssignmentWorkSlot.getNodeId())+"\t"+preAssignmentWorkSlot.getPort()+"\t"+cluster.getHost(assignment.get(executor).getNodeId())+"\t"+assignment.get(executor).getPort());
 
                     ////////////////////////////////////////update//////////////////////////////////////////////
                     workerSlot = assignment.get(executor);

@@ -16,7 +16,7 @@ import static com.basic.benchmark.Constants.*;
 /**
  * locate com.basic.benchmark.schedule
  * Created by 79875 on 2017/10/17.
- * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceWordCountTopology stormwordcount 9 9 9 false 60
+ * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceWordCountTopology stormwordcount 30 60 240 false 20
  */
 public class ResourceWordCountTopology {
 

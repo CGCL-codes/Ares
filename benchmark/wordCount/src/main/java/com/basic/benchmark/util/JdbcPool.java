@@ -1,5 +1,6 @@
 package com.basic.benchmark.util;
 
+import com.basic.benchmark.Constants;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import java.sql.Connection;
@@ -30,7 +31,7 @@ public class JdbcPool {
 
             //通过读取C3P0的xml配置文件创建数据源，C3P0的xml配置文件c3p0-config.xml必须放在src目录下
             //ds = new ComboPooledDataSource();//使用C3P0的默认配置来创建数据源
-            ds = new ComboPooledDataSource("Server");//使用C3P0的命名配置来创建数据源
+            ds = new ComboPooledDataSource(Constants.jdbcConfigName);//使用C3P0的命名配置来创建数据源
 
         }catch (Exception e) {
             throw new ExceptionInInitializerError(e);

@@ -1,10 +1,28 @@
 package com.basic.benchmark;
 
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * locate com.basic.benchmark
  * Created by 79875 on 2017/10/18.
  */
 public class Constants {
+    private static String fileName="/ares.properties";
+
+    private static Properties properties=null;
+
+    static {
+        properties = new Properties();
+        try {
+            InputStream in = Object.class.getResourceAsStream(fileName);
+            properties.load(in);
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static final String SENTENCE_SPOUT_ID ="sentence-spout";
     public static final String COUNT_BOLT_ID = "count-bolt";
     public static final String REPORT_BOLT_ID= "report-bolt";
@@ -25,4 +43,7 @@ public class Constants {
     public static final String TUPLECOUNT_STREAM_ID="tuplecountstream";
     public static final String GENDER_STREAMID="genderstream";
     public static final String AGE_STREAMID="agestream";
+
+    public static final String isSlowDown= properties.getProperty("slowdown");
+    public static final String jdbcConfigName= properties.getProperty("jdbcConfigName");
 }

@@ -19,7 +19,7 @@ static{
     <default-config>
         <property name="driverClass">com.mysql.jdbc.Driver</property>
         <property name="jdbcUrl">jdbc:mysql://ubuntu2:3306/aresbenchmark</property>
-        <property name="user">ubuntu</property>
+        <property name="user">root</property>
         <property name="password">123456</property>
 
         <property name="acquireIncrement">5</property>
@@ -49,7 +49,7 @@ static{
     -->
     <named-config name="Server">
         <property name="driverClass">com.mysql.jdbc.Driver</property>
-        <property name="jdbcUrl">jdbc:mysql://node100:3306/aresbenchmark</property>
+        <property name="jdbcUrl">jdbc:mysql://node20:3306/aresbenchmark</property>
         <property name="user">root</property>
         <property name="password">123456</property>
 
