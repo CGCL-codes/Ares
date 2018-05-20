@@ -1,5 +1,6 @@
 package com.basic.core.scheduler;
 
+import com.basic.core.util.AresUtils;
 import com.basic.core.util.ComputeCostUtil;
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.*;
@@ -140,19 +141,19 @@ public class ResourceAwareTempScheduler implements IScheduler {
                 LOG.debug("scheduling result: {}", result);
 
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                Map<WorkerSlot, Collection<ExecutorDetails>> schedulingResultMap = result.getSchedulingResultMap();
-//                Map<ExecutorDetails, WorkerSlot> assignmetnMap=new HashMap<>();
-//                for(WorkerSlot workerSlot:schedulingResultMap.keySet()){
-//                    Collection<ExecutorDetails> executorDetails = schedulingResultMap.get(workerSlot);
-//                    for(ExecutorDetails executor:executorDetails){
-//                        if(!AresUtils.isComponentAcker(td,executor))
-//                            assignmetnMap.put(executor,workerSlot);
-//                    }
-//                }
-//
-//                computeCostUtil.initProcessingCostMap(cluster.getAvailableSlots(),assignmetnMap);
-//                double evenUtilityCost = computeCostUtil.computeUtilityCost(assignmetnMap);
-//                LOG.info("ResourceUtilityCost: "+evenUtilityCost);
+                Map<WorkerSlot, Collection<ExecutorDetails>> schedulingResultMap = result.getSchedulingResultMap();
+                Map<ExecutorDetails, WorkerSlot> assignmetnMap=new HashMap<>();
+                for(WorkerSlot workerSlot:schedulingResultMap.keySet()){
+                    Collection<ExecutorDetails> executorDetails = schedulingResultMap.get(workerSlot);
+                    for(ExecutorDetails executor:executorDetails){
+                        if(!AresUtils.isComponentAcker(td,executor))
+                            assignmetnMap.put(executor,workerSlot);
+                    }
+                }
+
+                computeCostUtil.initProcessingCostMap(cluster.getAvailableSlots(),assignmetnMap);
+                double evenUtilityCost = computeCostUtil.computeUtilityCost(assignmetnMap);
+                LOG.info("ResourceUtilityCost: "+evenUtilityCost);
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 if (result != null && result.isValid()) {

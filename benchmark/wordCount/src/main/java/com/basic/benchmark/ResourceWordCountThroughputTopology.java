@@ -16,9 +16,9 @@ import static com.basic.benchmark.Constants.*;
 /**
  * locate com.basic.benchmark.schedule
  * Created by 79875 on 2017/10/17.
- * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceWordCountTopology stormwordcount 30 60 240 false 20
+ * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.ResourceWordCountThroughputTopology stormwordcount 30 30 60 false 60
  */
-public class ResourceWordCountTopology {
+public class ResourceWordCountThroughputTopology {
 
     private static final String TOPOLOGY_NAME= "sentence-wordcount-topology";
     public static void main(String[] args) throws Exception {

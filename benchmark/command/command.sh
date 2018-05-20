@@ -7,7 +7,7 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 export PATH
 
 #启动nimbus命令
-nohup /storm/apache-storm-1.2.1/bin/storm nimbus > /storm/apache-storm-1.2.1/logs/nimbus.out 2>&1
+nohup /storm/apache-storm-1.2.1/bin/storm nimbus > /storm/apache-storm-1.2.1/logs/nimbus.out 2>&1 &
 #启动ui命令
 nohup /storm/apache-storm-1.2.1/bin/storm ui > /storm/apache-storm-1.2.1/logs/ui.out 2>&1 &
 
