@@ -14,7 +14,7 @@ import static com.basic.benchmark.Constants.*;
 
 /**
  * Created by 79875 on 2017/3/7.
- * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountThroughputTopology stormwordcount 30 60 120 false 20
+ * 提交stormtopology任务 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountThroughputTopology stormwordcount 30 30 60 false 20
  */
 public class SentenceWordCountThroughputTopology {
 
