@@ -52,7 +52,21 @@ In the `storm.yaml` configuration of the nimbus node, perform the following conf
 storm.scheduler: "com.basic.core.scheduler.GameScheduler"
 ```
 
-Then, you can submit the example to the Storm cluster
+### AresStorm Benchmark
+
+#### Building Benchmark
+AresStorm benchmark code is maintained using [Maven](http://maven.apache.org/). Generate the excutable jar by running
+```
+cd benchmark/xxx
+mvan clean install -Dmaven.test.skip=true -Dcheckstyle.skip=true
+```
+
+#### Running Benchmark
+
+After deploying a AresStorm cluster, you can launch AresStorm by submitting its jar to the cluster. Please refer to Storm documents for how to
+[set up a Storm cluster](https://storm.apache.org/documentation/Setting-up-a-Storm-cluster.html) and [run topologies on a Storm cluster](https://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.ht)
+
+Then, you can submit the example to the AresStorm cluster
 
 ```txt
 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountThroughputTopology StormWordcountTopollgy *PARALLISM*
