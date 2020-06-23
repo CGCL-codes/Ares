@@ -13,6 +13,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="Ares" target="1.8" />
       <module name="ares" target="1.7" />
       <module name="ares-core" target="1.8" />
       <module name="aresStorm" target="1.8" />

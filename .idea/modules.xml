@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Ares.iml" filepath="$PROJECT_DIR$/Ares.iml" />
       <module fileurl="file://$PROJECT_DIR$/benchmark/TPCJoinSchema/TPCJoinSchema.iml" filepath="$PROJECT_DIR$/benchmark/TPCJoinSchema/TPCJoinSchema.iml" />
       <module fileurl="file://$PROJECT_DIR$/ares-core/ares-core.iml" filepath="$PROJECT_DIR$/ares-core/ares-core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/aresStorm.iml" filepath="$PROJECT_DIR$/aresStorm.iml" />
       <module fileurl="file://$PROJECT_DIR$/benchmark/wordCount/wordCount.iml" filepath="$PROJECT_DIR$/benchmark/wordCount/wordCount.iml" />
     </modules>
   </component>
