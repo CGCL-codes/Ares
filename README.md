@@ -1,14 +1,10 @@
 # Ares
-Ares is a high performance and fault tolerant distributed stream processing system, which considers both   both system performance and fault tolerant capability during task allocation and use a game-theoretic approach to obtain an optimal scheduler for task allocation. Ares greatly outperforms Storm in terms of system throughput and the average processing latency.
+Ares is a high performance and fault tolerant distributed stream processing system, which considers both system performance and fault tolerant capability during task allocation. 
 
 ## Introduction
-In stream applications, a large volume of data is continuously generated and analyzed in real time style. To provide scalable processing infrastructures, different Distributed Stream Processing Systems (DSPSs) have been designed and widely deployed, such as S4, Storm, Heron, Flink, and Spark Streaming. A DSPS needs to process real time stream data with short latency. Meanwhile, it is commonly vital for a stream application to provide a long time continuous service without significant downtime. Upon a failure, a DSPS should recover as soon as possible. Therefore, it is important for a DSPS to achieve both short processing latency and short
-recovery time.
-
-To achieve short processing latency, existing DSPS designs mainly leverage task allocation schemes that co-locate the pair of an upstream task and a downstream task in the topology in the same node, in order to avoid unnecessary internode communications. However, due to the dependency between upstream
-and downstream tasks, such an approach can cause cascaded waiting during the recovery of tasks. The problem becomes acute under correlated failures, where a number of nodes fail simultaneously because of the failure of switches, routers, and power facilities.
-
-To address this issue, we propose a novel high performance and fault-tolerant distributed stream processing system, called Ares. We formally define the Fault Tolerant Scheduler (FTS) problem of finding the optimal task allocation that maximizes the system utility, which considers both system performance and fault tolerance. We leverage a game-theoretic approach to solve the FTS problem and design Nirvana, an algorithm based on best-response dynamics. Nirvana fully exploits the dependency between upstream and downstream tasks to achieve both short processing latency and short recovery time. We prove the existence of Nash equilibrium for the FTS game and demonstrate that the proposed Nirvana algorithm achieves a 2-approximation of the theoretical optimum.
+In stream applications, a large volume of data is continuously generated and analyzed in real time style. To provide scalable processing infrastructures, different Distributed Stream Processing Systems (DSPSs) have been designed and widely deployed, such as S4, Storm, Heron, Flink, and Spark Streaming. A DSPS needs to process real time stream data with short latency. Meanwhile, it is commonly vital for a stream application to provide a long time continuous service without significant downtime. Upon a failure, a DSPS should recover as soon as possible. Therefore, it is important for a DSPS to achieve both short processing latency and short recovery time.
+To achieve short processing latency, existing DSPS designs mainly leverage task allocation schemes that co-locate the pair of an upstream task and a downstream task in the topology in the same node, in order to avoid unnecessary inter-node communications. However, due to the dependency between upstream and downstream tasks, such an approach can cause cascaded waiting during the recovery of tasks. The problem becomes acute under correlated failures, where a number of nodes fail simultaneously because of the failure of switches, routers, and power facilities.
+To address this issue, we design and implement the high performance and fault-tolerant distributed stream processing system, called Ares. 
 
 ## Structure of Ares
 
@@ -51,7 +47,7 @@ Configuration including the following
 ./ares-core/src/main/resources/nodetransferpair.properties. (by default)
 ```
 
-### Using AresStorm
+### Using Ares
 
 If you already deploy the Apache Storm cluster environment, you only need to replace these jars to `$STORM_HOME/lib` and `$STORM_HOME/lib-worker`
 > * ares-core-1.0-SNAPSHOT.jar
@@ -69,10 +65,10 @@ In the `storm.yaml` configuration of the nimbus node, perform the following conf
 storm.scheduler: "com.basic.core.scheduler.GameScheduler"
 ```
 
-### AresStorm Benchmark
+### Ares Benchmark
 
 #### Building Benchmark
-AresStorm benchmark code is maintained using [Maven](http://maven.apache.org/). Generate the excutable jar by running
+Ares benchmark code is maintained using [Maven](http://maven.apache.org/). Generate the excutable jar by running
 ```
 cd benchmark/xxx
 mvan clean install -Dmaven.test.skip=true -Dcheckstyle.skip=true
@@ -80,10 +76,10 @@ mvan clean install -Dmaven.test.skip=true -Dcheckstyle.skip=true
 
 #### Running Benchmark
 
-After deploying a AresStorm cluster, you can launch AresStorm by submitting its jar to the cluster. Please refer to Storm documents for how to
+After deploying a Ares cluster, you can launch Ares by submitting its jar to the cluster. Please refer to Storm documents for how to
 [set up a Storm cluster](https://storm.apache.org/documentation/Setting-up-a-Storm-cluster.html) and [run topologies on a Storm cluster](https://storm.apache.org/documentation/Running-topologies-on-a-production-cluster.ht)
 
-Then, you can submit the example to the AresStorm cluster
+Then, you can submit the example to the Ares cluster
 
 ```txt
 storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountThroughputTopology StormWordcountTopollgy *PARALLISM*
@@ -93,11 +89,11 @@ storm jar wordCount-1.0-SNAPSHOT.jar com.basic.benchmark.SentenceWordCountThroug
 
 If you want to know more detailed information, please refer to this paper:
 
-Changfu Lin, Jingjing Zhan, Hanhua Chen, Jie Tan, Hai Jin.  "[Ares: A High Performance and Fault-Tolerant Distributed Stream Processing System](https://ieeexplore.ieee.org/document/8526815/)" in Proceedings of 26th International Conference on Network Protocols (ICNP 2018), TCambridge, UK, September 25-27, 2018 ([Bibtex](AresStorm-conf.bib))
+Changfu Lin, Jingjing Zhan, Hanhua Chen, Jie Tan, Hai Jin.  "[Ares: A High Performance and Fault-Tolerant Distributed Stream Processing System](https://ieeexplore.ieee.org/document/8526815/)" in Proceedings of 26th International Conference on Network Protocols (ICNP 2018), Cambridge, UK, September 25-27, 2018 ([Bibtex](AresStorm-conf.bib))
 
 ## Author and Copyright
 
-AresStorm is developed in Cluster and Grid Computing Lab, Services Computing Technology and System Lab, Big Data Technology and System Lab, School of Computer Science and Technology, Huazhong University of Science and Technology, Wuhan, China by Changfu Lin (lcf@hust.edu.cn), Jingjing Zhan (zjj@hust.edu.cn), Hanhua Chen (chen@hust.edu.cn), Jie Tan(tjmaster@hust.edu.cn), Hai Jin (hjin@hust.edu.cn)
+Ares is developed in Big Data Technology and System Lab, Cluster and Grid Computing Lab, Services Computing Technology and System Lab, School of Computer Science and Technology, Huazhong University of Science and Technology, Wuhan 430074, China by Changfu Lin (lcf@hust.edu.cn), Jingjing Zhan (zjj@hust.edu.cn), Hanhua Chen (chen@hust.edu.cn), Jie Tan(tjmaster@hust.edu.cn), Hai Jin (hjin@hust.edu.cn)
 
 Copyright (C) 2017, [STCS & CGCL](http://grid.hust.edu.cn/) and [Huazhong University of Science and Technology](http://www.hust.edu.cn).
 
