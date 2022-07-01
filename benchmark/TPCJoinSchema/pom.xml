@@ -16,7 +16,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- kafka version used by new storm-kafka-client spout code -->
-        <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
+        <storm.kafka.client.version>0.10.2.2</storm.kafka.client.version>
     </properties>
 
     <dependencies>
